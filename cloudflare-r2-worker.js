@@ -1,15 +1,8 @@
 /**
- * Cloudflare Worker for ID Card Studio - Cloudflare R2 Image Storage
- * 
- * Instructions:
- * 1. Log in to Cloudflare Dashboard -> R2 -> Create Bucket (e.g. "id-card-photos")
- * 2. Create a new Worker (e.g. "idcard-photo-storage")
- * 3. In Worker Settings -> Variables -> R2 Bucket Bindings:
- *    - Variable Name: MY_BUCKET
- *    - R2 Bucket: id-card-photos
- * 4. Paste this code into the Worker editor and click Deploy!
- * 5. Set VITE_CLOUDFLARE_WORKER_UPLOAD_URL in your .env file to your worker URL:
- *    https://idcard-photo-storage.<your-subdomain>.workers.dev/upload
+ * Cloudflare Worker for ID Card Studio
+ * Handles:
+ * 1. Cloudflare R2 Image Upload (POST /upload) & Serve (GET /photos/*)
+ * 2. Static Assets (React frontend from /dist) with SPA Fallback
  */
 
 export default {
@@ -54,7 +47,6 @@ export default {
         });
 
         // Generate public access URL
-        // If you have a custom domain on R2, use it; otherwise use the worker serve route
         const publicUrl = env.PUBLIC_CDN_URL
           ? `${env.PUBLIC_CDN_URL}/${key}`
           : `${url.origin}/${key}`;
@@ -78,13 +70,13 @@ export default {
       }
     }
 
-    // 2. Serve Image Route: GET /photos/...
-    if (request.method === 'GET') {
+    // 2. Serve R2 Photos: GET /photos/...
+    if (request.method === 'GET' && url.pathname.startsWith('/photos/')) {
       const key = url.pathname.slice(1);
       const object = await env.MY_BUCKET.get(key);
 
       if (!object) {
-        return new Response('Not Found', { status: 404, headers: corsHeaders });
+        return new Response('Photo Not Found', { status: 404, headers: corsHeaders });
       }
 
       const headers = new Headers(corsHeaders);
@@ -95,6 +87,16 @@ export default {
       return new Response(object.body, { headers });
     }
 
-    return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
+    // 3. Static Assets: Serve React Frontend from /dist
+    if (env.ASSETS) {
+      let response = await env.ASSETS.fetch(request);
+      // SPA Fallback: if 404 and is a navigation route (no file extension), return index.html
+      if (response.status === 404 && request.method === 'GET' && !url.pathname.includes('.')) {
+        response = await env.ASSETS.fetch(new Request(new URL('/index.html', request.url), request));
+      }
+      return response;
+    }
+
+    return new Response('Not Found', { status: 404, headers: corsHeaders });
   },
 };

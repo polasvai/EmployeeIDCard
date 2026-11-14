@@ -2,6 +2,11 @@ name = "employeeidcard"
 main = "cloudflare-r2-worker.js"
 compatibility_date = "2024-11-01"
 
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
 # Cloudflare R2 Bucket Binding for employee & student photos
 [[r2_buckets]]
 binding = "MY_BUCKET"
