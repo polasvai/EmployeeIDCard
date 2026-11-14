@@ -1,5 +1,5 @@
 import { PDFDocument, rgb } from 'pdf-lib';
-import { CR80, A4, MM_TO_PT } from '../constants/printSpecs';
+import { CR80, A4, A3, MM_TO_PT } from '../constants/printSpecs';
 import { generateQrCodeDataUrl, generateBarcodeDataUrl } from './barcodeGenerator';
 import { createImage } from './imageProcessor';
 
@@ -400,25 +400,27 @@ export async function exportCardsPdf({
       }
     }
   } else {
-    // A4 SHEET IMPOSITION MODE
-    const gridConfig = isLandscape ? A4.landscapeGrid : A4.portraitGrid;
+    // SHEET IMPOSITION MODE (A4 or A3)
+    const isA3 = mode === 'a3';
+    const paperSpec = isA3 ? A3 : A4;
+    const gridConfig = isLandscape ? paperSpec.landscapeGrid : paperSpec.portraitGrid;
     const { cols, rows, maxCards, spacingPt } = gridConfig;
 
-    const a4WidthPt = A4.widthPt;
-    const a4HeightPt = A4.heightPt;
+    const sheetWidthPt = gridConfig.pageWidthPt || paperSpec.widthPt;
+    const sheetHeightPt = gridConfig.pageHeightPt || paperSpec.heightPt;
 
-    // Calculate grid positioning to center on A4 page
+    // Calculate grid positioning to center on sheet
     const totalGridWidth = cols * cardWidthPt + (cols - 1) * spacingPt;
     const totalGridHeight = rows * cardHeightPt + (rows - 1) * spacingPt;
-    const startX = (a4WidthPt - totalGridWidth) / 2;
-    const startY = (a4HeightPt - totalGridHeight) / 2;
+    const startX = (sheetWidthPt - totalGridWidth) / 2;
+    const startY = (sheetHeightPt - totalGridHeight) / 2;
 
     // Chunk records into pages
     for (let sheetIdx = 0; sheetIdx < renderedCards.length; sheetIdx += maxCards) {
       const sheetCards = renderedCards.slice(sheetIdx, sheetIdx + maxCards);
 
       // FRONT SHEET
-      const frontSheet = pdfDoc.addPage([a4WidthPt, a4HeightPt]);
+      const frontSheet = pdfDoc.addPage([sheetWidthPt, sheetHeightPt]);
 
       for (let i = 0; i < sheetCards.length; i++) {
         const card = sheetCards[i];
@@ -427,7 +429,7 @@ export async function exportCardsPdf({
 
         // PDF coordinate (0,0) is bottom-left
         const posX = startX + col * (cardWidthPt + spacingPt);
-        const posY = a4HeightPt - startY - (row + 1) * cardHeightPt - row * spacingPt;
+        const posY = sheetHeightPt - startY - (row + 1) * cardHeightPt - row * spacingPt;
 
         const img = await pdfDoc.embedPng(card.frontDataUrl);
         frontSheet.drawImage(img, {
@@ -442,7 +444,7 @@ export async function exportCardsPdf({
 
       // BACK SHEET (if requested)
       if (includeBack) {
-        const backSheet = pdfDoc.addPage([a4WidthPt, a4HeightPt]);
+        const backSheet = pdfDoc.addPage([sheetWidthPt, sheetHeightPt]);
 
         for (let i = 0; i < sheetCards.length; i++) {
           const card = sheetCards[i];
@@ -458,7 +460,7 @@ export async function exportCardsPdf({
           }
 
           const posX = startX + col * (cardWidthPt + spacingPt);
-          const posY = a4HeightPt - startY - (row + 1) * cardHeightPt - row * spacingPt;
+          const posY = sheetHeightPt - startY - (row + 1) * cardHeightPt - row * spacingPt;
 
           const img = await pdfDoc.embedPng(card.backDataUrl);
           backSheet.drawImage(img, {

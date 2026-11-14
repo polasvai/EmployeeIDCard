@@ -18,7 +18,7 @@ export default function PrintPreviewModal({
   templates = [],
   onMarkPrinted,
 }) {
-  const [mode, setMode] = useState('a4'); // 'a4' | 'single'
+  const [mode, setMode] = useState('a4'); // 'a4' | 'a3' | 'single'
   const [includeBack, setIncludeBack] = useState(true);
   const [mirrorBack, setMirrorBack] = useState(true);
   const [selectedTemplateId, setSelectedTemplateId] = useState('assigned'); // 'assigned' or specific template ID
@@ -35,7 +35,13 @@ export default function PrintPreviewModal({
       : template;
 
   const isLandscape = activeTemplate?.orientation !== 'portrait';
-  const cardsPerSheet = isLandscape ? 10 : 8;
+  const cardsPerSheet =
+    mode === 'a3'
+      ? 20
+      : mode === 'a4'
+      ? (isLandscape ? 10 : 8)
+      : 1;
+
   const estimatedSheets = Math.ceil(records.length / cardsPerSheet);
 
   const handleGeneratePdf = async () => {
@@ -134,38 +140,58 @@ export default function PrintPreviewModal({
             <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
               Select Output Format:
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {/* A4 Sheet */}
               <div
                 onClick={() => !generating && setMode('a4')}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                className={`p-3 rounded-xl border cursor-pointer transition-all ${
                   mode === 'a4'
                     ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200'
                     : 'bg-slate-800/40 border-slate-800 hover:bg-slate-800 text-slate-300'
                 }`}
               >
-                <div className="flex items-center gap-2 font-semibold mb-1">
-                  <FileText className="w-4 h-4 text-indigo-400" />
-                  <span>A4 Sheet Imposition</span>
+                <div className="flex items-center gap-1.5 font-semibold mb-1">
+                  <FileText className="w-4 h-4 text-indigo-400 shrink-0" />
+                  <span>A4 Sheet</span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  {cardsPerSheet} cards per A4 page with hairline crop marks. Perfect for standard laser/inkjet sheet printing.
+                <p className="text-[10px] text-slate-400 leading-snug">
+                  210 × 297 mm. {isLandscape ? '10 cards' : '8 cards'} per page with crop marks.
                 </p>
               </div>
 
+              {/* A3 Sheet */}
+              <div
+                onClick={() => !generating && setMode('a3')}
+                className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                  mode === 'a3'
+                    ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200'
+                    : 'bg-slate-800/40 border-slate-800 hover:bg-slate-800 text-slate-300'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-semibold mb-1">
+                  <FileText className="w-4 h-4 text-purple-400 shrink-0" />
+                  <span>A3 Sheet (Bulk)</span>
+                </div>
+                <p className="text-[10px] text-slate-400 leading-snug">
+                  297 × 420 mm. 20 cards per page. Perfect for high-speed batch printing.
+                </p>
+              </div>
+
+              {/* Single PVC */}
               <div
                 onClick={() => !generating && setMode('single')}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                className={`p-3 rounded-xl border cursor-pointer transition-all ${
                   mode === 'single'
                     ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200'
                     : 'bg-slate-800/40 border-slate-800 hover:bg-slate-800 text-slate-300'
                 }`}
               >
-                <div className="flex items-center gap-2 font-semibold mb-1">
-                  <Copy className="w-4 h-4 text-emerald-400" />
+                <div className="flex items-center gap-1.5 font-semibold mb-1">
+                  <Copy className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>Single CR80 PVC</span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Strict 85.6 × 53.98 mm page size. Designed for direct thermal PVC card printers (Fargo, Evolis, Zebra).
+                <p className="text-[10px] text-slate-400 leading-snug">
+                  85.6 × 53.98 mm. Direct PVC card printer output (Fargo, Zebra, Evolis).
                 </p>
               </div>
             </div>
@@ -186,7 +212,7 @@ export default function PrintPreviewModal({
               />
             </div>
 
-            {mode === 'a4' && includeBack && (
+            {mode !== 'single' && includeBack && (
               <div className="flex items-center justify-between pt-2 border-t border-slate-800">
                 <div>
                   <p className="font-medium text-slate-200">Duplex Mirroring</p>
@@ -208,7 +234,7 @@ export default function PrintPreviewModal({
           <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between text-slate-400">
             <div>
               <span className="font-semibold text-slate-200">{records.length}</span> cards selected
-              {mode === 'a4' && ` • ~${estimatedSheets} A4 sheet${estimatedSheets > 1 ? 's' : ''}`}
+              {mode !== 'single' && ` • ~${estimatedSheets} ${mode.toUpperCase()} sheet${estimatedSheets > 1 ? 's' : ''}`}
             </div>
             <span className="font-mono text-indigo-400 text-[11px]">300 DPI Vector PDF</span>
           </div>

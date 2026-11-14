@@ -95,6 +95,10 @@ export default function Sidebar() {
               <span>A4 Imposition:</span>
               <span className="font-mono text-slate-200">10 cards / page</span>
             </div>
+            <div className="flex justify-between">
+              <span>A3 Bulk Imposition:</span>
+              <span className="font-mono text-slate-200">20 cards / page</span>
+            </div>
           </div>
         </div>
       </div>

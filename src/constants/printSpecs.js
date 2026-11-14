@@ -50,6 +50,31 @@ export const A4 = {
   },
 };
 
+export const A3 = {
+  widthMm: 297,
+  heightMm: 420,
+  widthPt: 297 * MM_TO_PT, // ~841.89 pt
+  heightPt: 420 * MM_TO_PT, // ~1190.55 pt
+  landscapeGrid: {
+    pageWidthPt: 420 * MM_TO_PT,
+    pageHeightPt: 297 * MM_TO_PT,
+    cols: 4,
+    rows: 5,
+    maxCards: 20,
+    spacingMm: 4,
+    spacingPt: 4 * MM_TO_PT,
+  },
+  portraitGrid: {
+    pageWidthPt: 297 * MM_TO_PT,
+    pageHeightPt: 420 * MM_TO_PT,
+    cols: 5,
+    rows: 4,
+    maxCards: 20,
+    spacingMm: 4,
+    spacingPt: 4 * MM_TO_PT,
+  },
+};
+
 export const DEFAULT_TEMPLATES = [
   // 1. Corporate & Executive Template (Landscape)
   {
