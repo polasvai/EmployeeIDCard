@@ -1,4 +1,4 @@
-name = "idcard-photo-storage"
+name = "employeeidcard"
 main = "cloudflare-r2-worker.js"
 compatibility_date = "2024-11-01"
 
