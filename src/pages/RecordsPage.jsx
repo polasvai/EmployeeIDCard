@@ -334,9 +334,31 @@ export default function RecordsPage() {
     setIsPrintOpen(true);
   };
 
-  const handleMarkPrinted = async (printedIds) => {
+  const handleSendToPrint = async (idsToSend) => {
     const updated = records.map((r) =>
-      printedIds.includes(r.id) ? { ...r, printStatus: 'printed' } : r
+      idsToSend.includes(r.id) ? { ...r, printStatus: 'sent_to_print' } : r
+    );
+    saveRecordsState(updated);
+
+    if (isFirebaseConfigured && db && currentUser?.uid) {
+      try {
+        const batch = writeBatch(db);
+        idsToSend.forEach((id) => {
+          const docRef = doc(db, 'organizations', currentUser.uid, 'records', id);
+          batch.update(docRef, { printStatus: 'sent_to_print' });
+        });
+        await batch.commit();
+      } catch (e) {
+        console.warn('Error updating status in firestore:', e);
+      }
+    }
+
+    showToast(`Sent ${idsToSend.length} card(s) to the Print Queue.`);
+  };
+
+  const handleMarkPrinted = async (printedIds, targetStatus = 'printed') => {
+    const updated = records.map((r) =>
+      printedIds.includes(r.id) ? { ...r, printStatus: targetStatus } : r
     );
     saveRecordsState(updated);
 
@@ -345,7 +367,7 @@ export default function RecordsPage() {
         const batch = writeBatch(db);
         printedIds.forEach((id) => {
           const docRef = doc(db, 'organizations', currentUser.uid, 'records', id);
-          batch.update(docRef, { printStatus: 'printed' });
+          batch.update(docRef, { printStatus: targetStatus });
         });
         await batch.commit();
       } catch (e) {
@@ -519,6 +541,7 @@ export default function RecordsPage() {
         onOpenAddModal={() => navigate('/entry')}
         onEditRecord={(record) => navigate(`/entry?id=${record.id}`)}
         onOpenPrintModal={handleOpenPrint}
+        onSendToPrint={handleSendToPrint}
       />
 
       {/* CSV / Excel Bulk Import Modal */}
@@ -554,6 +577,7 @@ export default function RecordsPage() {
           template={activeTemplate}
           templates={templates}
           onMarkPrinted={handleMarkPrinted}
+          onSendToPrint={handleSendToPrint}
         />
       )}
 

@@ -21,7 +21,7 @@ import {
   getDocs,
   serverTimestamp,
 } from 'firebase/firestore';
-import { DEFAULT_TEMPLATE } from '../constants/printSpecs';
+import { DEFAULT_TEMPLATE, DEFAULT_TEMPLATES } from '../constants/printSpecs';
 
 const AuthContext = createContext(null);
 
@@ -35,14 +35,59 @@ export function useAuth() {
 
 const LOCAL_STORAGE_KEY_USER = 'id_studio_demo_user';
 const LOCAL_STORAGE_KEY_ORG = 'id_studio_demo_org';
+const LOCAL_STORAGE_KEY_ALL_ORGS = 'id_studio_all_orgs';
+
+const INITIAL_MOCK_ORGS = [
+  {
+    id: 'demo-org-owner',
+    name: 'Acme Global Academy',
+    ownerUid: 'demo-org-owner',
+    ownerEmail: 'demo@idcardstudio.local',
+    designerEnabled: true,
+    recordsCount: 4,
+    createdAt: '2026-01-15T08:00:00.000Z',
+  },
+  {
+    id: 'org-health-01',
+    name: 'Central Specialized Hospital',
+    ownerUid: 'user-health-01',
+    ownerEmail: 'admin@centralhospital.org',
+    designerEnabled: true,
+    recordsCount: 18,
+    createdAt: '2026-02-10T10:30:00.000Z',
+  },
+  {
+    id: 'org-edu-02',
+    name: 'Model College & University',
+    ownerUid: 'user-edu-02',
+    ownerEmail: 'registrar@modelcollege.edu.bd',
+    designerEnabled: false, // Demo designer disabled for this organization
+    recordsCount: 120,
+    createdAt: '2026-03-01T12:00:00.000Z',
+  },
+];
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [organization, setOrganization] = useState(null);
+  const [allOrganizations, setAllOrganizations] = useState(INITIAL_MOCK_ORGS);
   const [loading, setLoading] = useState(true);
 
   // Initialize or fetch organization doc & starter template
   const ensureOrganizationInitialized = async (user) => {
+    // If super admin, set superadmin organization
+    if (user.role === 'superadmin') {
+      const adminOrg = {
+        id: 'superadmin-hq',
+        name: 'Super Admin Production HQ',
+        ownerUid: user.uid,
+        ownerEmail: user.email,
+        designerEnabled: true,
+      };
+      setOrganization(adminOrg);
+      return adminOrg;
+    }
+
     if (!isFirebaseConfigured || !db) {
       // Local/Demo fallback
       const storedOrg = localStorage.getItem(LOCAL_STORAGE_KEY_ORG);
@@ -55,6 +100,8 @@ export function AuthProvider({ children }) {
         id: user.uid,
         name: user.displayName ? `${user.displayName}'s Organization` : 'Acme Global Academy',
         ownerUid: user.uid,
+        ownerEmail: user.email || 'demo@idcardstudio.local',
+        designerEnabled: true,
         logoUrl: null,
         createdAt: new Date().toISOString(),
       };
@@ -76,16 +123,18 @@ export function AuthProvider({ children }) {
         const initialOrg = {
           name: user.displayName ? `${user.displayName}'s Organization` : 'My Organization',
           ownerUid: user.uid,
+          ownerEmail: user.email || '',
+          designerEnabled: true,
           logoUrl: null,
           createdAt: serverTimestamp(),
         };
         await setDoc(orgRef, initialOrg);
 
-        // Check/provision default starter template
+        // Provision default starter template
         const templatesCol = collection(db, 'organizations', user.uid, 'templates');
         const templatesSnap = await getDocs(templatesCol);
         if (templatesSnap.empty) {
-          const starterTemplateRef = doc(templatesCol);
+          const starterTemplateRef = doc(templatesCol, 'default');
           await setDoc(starterTemplateRef, {
             ...DEFAULT_TEMPLATE,
             createdAt: serverTimestamp(),
@@ -99,24 +148,44 @@ export function AuthProvider({ children }) {
       }
     } catch (err) {
       console.error('Error provisioning or loading organization:', err);
-      // Fallback
       const fallbackOrg = {
         id: user.uid,
         name: 'My Organization',
         ownerUid: user.uid,
+        designerEnabled: true,
       };
       setOrganization(fallbackOrg);
       return fallbackOrg;
     }
   };
 
+  // Load organizations list for super admin
+  useEffect(() => {
+    const savedOrgs = localStorage.getItem(LOCAL_STORAGE_KEY_ALL_ORGS);
+    if (savedOrgs) {
+      try {
+        setAllOrganizations(JSON.parse(savedOrgs));
+      } catch (e) {
+        setAllOrganizations(INITIAL_MOCK_ORGS);
+      }
+    } else {
+      localStorage.setItem(LOCAL_STORAGE_KEY_ALL_ORGS, JSON.stringify(INITIAL_MOCK_ORGS));
+    }
+  }, []);
+
   useEffect(() => {
     if (isFirebaseConfigured && auth) {
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        setCurrentUser(user);
         if (user) {
-          await ensureOrganizationInitialized(user);
+          // Check if admin email
+          const isSuper =
+            user.email?.toLowerCase().includes('superadmin') ||
+            user.email?.toLowerCase() === 'admin@idcardstudio.com';
+          const userWithRole = { ...user, role: isSuper ? 'superadmin' : 'user' };
+          setCurrentUser(userWithRole);
+          await ensureOrganizationInitialized(userWithRole);
         } else {
+          setCurrentUser(null);
           setOrganization(null);
         }
         setLoading(false);
@@ -139,14 +208,22 @@ export function AuthProvider({ children }) {
   }, []);
 
   const loginWithEmail = async (email, password) => {
+    const isSuper =
+      email.toLowerCase().includes('superadmin') ||
+      email.toLowerCase() === 'admin@idcardstudio.com';
+
     if (isFirebaseConfigured && auth) {
-      return signInWithEmailAndPassword(auth, email, password);
+      const res = await signInWithEmailAndPassword(auth, email, password);
+      const userWithRole = { ...res.user, role: isSuper ? 'superadmin' : 'user' };
+      setCurrentUser(userWithRole);
+      return userWithRole;
     } else {
       const mockUser = {
-        uid: 'demo-user-123',
+        uid: isSuper ? 'superadmin-master' : 'demo-user-123',
         email,
-        displayName: email.split('@')[0],
+        displayName: isSuper ? 'Super Admin' : email.split('@')[0],
         photoURL: null,
+        role: isSuper ? 'superadmin' : 'user',
       };
       localStorage.setItem(LOCAL_STORAGE_KEY_USER, JSON.stringify(mockUser));
       setCurrentUser(mockUser);
@@ -168,10 +245,26 @@ export function AuthProvider({ children }) {
         email,
         displayName: orgName || email.split('@')[0],
         photoURL: null,
+        role: 'user',
       };
       localStorage.setItem(LOCAL_STORAGE_KEY_USER, JSON.stringify(mockUser));
       setCurrentUser(mockUser);
       await ensureOrganizationInitialized(mockUser);
+
+      // Add to all organizations
+      const newOrg = {
+        id: mockUser.uid,
+        name: orgName || 'My Organization',
+        ownerUid: mockUser.uid,
+        ownerEmail: email,
+        designerEnabled: true,
+        recordsCount: 0,
+        createdAt: new Date().toISOString(),
+      };
+      const updatedOrgs = [newOrg, ...allOrganizations];
+      setAllOrganizations(updatedOrgs);
+      localStorage.setItem(LOCAL_STORAGE_KEY_ALL_ORGS, JSON.stringify(updatedOrgs));
+
       return mockUser;
     }
   };
@@ -186,6 +279,7 @@ export function AuthProvider({ children }) {
         email: 'admin@organization.com',
         displayName: 'Google Demo User',
         photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face',
+        role: 'user',
       };
       localStorage.setItem(LOCAL_STORAGE_KEY_USER, JSON.stringify(mockUser));
       setCurrentUser(mockUser);
@@ -200,11 +294,34 @@ export function AuthProvider({ children }) {
       email: 'demo@idcardstudio.local',
       displayName: 'Acme Academy',
       photoURL: null,
+      role: 'user', // regular organization user
     };
     localStorage.setItem(LOCAL_STORAGE_KEY_USER, JSON.stringify(mockUser));
     setCurrentUser(mockUser);
     await ensureOrganizationInitialized(mockUser);
     return mockUser;
+  };
+
+  const loginAsSuperAdmin = async () => {
+    const superUser = {
+      uid: 'superadmin-master',
+      email: 'superadmin@idcardstudio.com',
+      displayName: 'Master Super Admin',
+      photoURL: null,
+      role: 'superadmin',
+    };
+    localStorage.setItem(LOCAL_STORAGE_KEY_USER, JSON.stringify(superUser));
+    setCurrentUser(superUser);
+    await ensureOrganizationInitialized(superUser);
+    return superUser;
+  };
+
+  const switchRole = (newRole) => {
+    if (!currentUser) return;
+    const updated = { ...currentUser, role: newRole };
+    setCurrentUser(updated);
+    localStorage.setItem(LOCAL_STORAGE_KEY_USER, JSON.stringify(updated));
+    ensureOrganizationInitialized(updated);
   };
 
   const logout = async () => {
@@ -231,17 +348,51 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Super Admin: Toggle Card Designer access for an organization
+  const toggleDesignerForOrg = async (orgId, enabled) => {
+    const updated = allOrganizations.map((org) =>
+      org.id === orgId ? { ...org, designerEnabled: enabled } : org
+    );
+    setAllOrganizations(updated);
+    localStorage.setItem(LOCAL_STORAGE_KEY_ALL_ORGS, JSON.stringify(updated));
+
+    // If active organization matches, update local state
+    if (organization?.id === orgId) {
+      setOrganization((prev) => ({ ...prev, designerEnabled: enabled }));
+      localStorage.setItem(
+        LOCAL_STORAGE_KEY_ORG,
+        JSON.stringify({ ...organization, designerEnabled: enabled })
+      );
+    }
+
+    if (isFirebaseConfigured && db) {
+      try {
+        const orgRef = doc(db, 'organizations', orgId);
+        await setDoc(orgRef, { designerEnabled: enabled }, { merge: true });
+      } catch (err) {
+        console.warn('Failed to update org designer flag in firestore:', err);
+      }
+    }
+  };
+
+  const isSuperAdmin = currentUser?.role === 'superadmin';
+
   const value = {
     currentUser,
     organization,
+    allOrganizations,
+    isSuperAdmin,
     isFirebaseConfigured,
     loading,
     loginWithEmail,
     registerWithEmail,
     loginWithGoogle,
     loginAsDemo,
+    loginAsSuperAdmin,
+    switchRole,
     logout,
     updateOrganizationProfile,
+    toggleDesignerForOrg,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

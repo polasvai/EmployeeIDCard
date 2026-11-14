@@ -8,9 +8,10 @@ import DashboardPage from './pages/DashboardPage';
 import DesignerPage from './pages/DesignerPage';
 import RecordsPage from './pages/RecordsPage';
 import DataEntryPage from './pages/DataEntryPage';
+import SuperAdminPage from './pages/SuperAdminPage';
 
 function ProtectedLayout() {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, isSuperAdmin, loading } = useAuth();
 
   if (loading) {
     return (
@@ -36,6 +37,10 @@ function ProtectedLayout() {
             <Route path="/entry" element={<DataEntryPage />} />
             <Route path="/designer" element={<DesignerPage />} />
             <Route path="/records" element={<RecordsPage />} />
+            <Route
+              path="/admin"
+              element={isSuperAdmin ? <SuperAdminPage /> : <Navigate to="/dashboard" replace />}
+            />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>

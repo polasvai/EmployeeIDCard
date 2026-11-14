@@ -9,6 +9,9 @@ import {
   UserPlus,
   User,
   Pencil,
+  RotateCw,
+  Truck,
+  Send,
 } from 'lucide-react';
 
 export default function RecordTable({
@@ -21,6 +24,7 @@ export default function RecordTable({
   onOpenAddModal,
   onOpenPrintModal,
   onEditRecord,
+  onSendToPrint,
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -34,13 +38,58 @@ export default function RecordTable({
       r.customFields?.department?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
-      statusFilter === 'all' ? true : r.printStatus === statusFilter;
+      statusFilter === 'all'
+        ? true
+        : statusFilter === 'pending'
+        ? !r.printStatus || r.printStatus === 'pending'
+        : r.printStatus === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
   const allSelected =
     filtered.length > 0 && filtered.every((r) => selectedIds.includes(r.id));
+
+  // Render status badge
+  const renderStatusBadge = (status) => {
+    switch (status) {
+      case 'sent_to_print':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[11px] font-semibold">
+            <Clock className="w-3 h-3" />
+            Sent to Print
+          </span>
+        );
+      case 'printing':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[11px] font-semibold">
+            <RotateCw className="w-3 h-3 animate-spin" style={{ animationDuration: '4s' }} />
+            In Printing
+          </span>
+        );
+      case 'printed':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-semibold">
+            <CheckCircle className="w-3 h-3" />
+            Printed
+          </span>
+        );
+      case 'delivered':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[11px] font-semibold">
+            <Truck className="w-3 h-3" />
+            Delivered
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-700/50 text-slate-400 border border-slate-700 text-[11px]">
+            <Clock className="w-3 h-3" />
+            Pending Draft
+          </span>
+        );
+    }
+  };
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col">
@@ -54,12 +103,12 @@ export default function RecordTable({
             placeholder="Search records by name, ID number, or dept..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500"
+            className="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 text-xs"
           />
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700">
+        <div className="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700 overflow-x-auto">
           <button
             onClick={() => setStatusFilter('all')}
             className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
@@ -71,14 +120,24 @@ export default function RecordTable({
             All ({records.length})
           </button>
           <button
-            onClick={() => setStatusFilter('pending')}
+            onClick={() => setStatusFilter('sent_to_print')}
             className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-              statusFilter === 'pending'
+              statusFilter === 'sent_to_print'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Sent to Print ({records.filter((r) => r.printStatus === 'sent_to_print').length})
+          </button>
+          <button
+            onClick={() => setStatusFilter('printing')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+              statusFilter === 'printing'
                 ? 'bg-amber-600 text-white'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            Pending ({records.filter((r) => r.printStatus === 'pending').length})
+            In Printing ({records.filter((r) => r.printStatus === 'printing').length})
           </button>
           <button
             onClick={() => setStatusFilter('printed')}
@@ -89,6 +148,26 @@ export default function RecordTable({
             }`}
           >
             Printed ({records.filter((r) => r.printStatus === 'printed').length})
+          </button>
+          <button
+            onClick={() => setStatusFilter('delivered')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+              statusFilter === 'delivered'
+                ? 'bg-purple-600 text-white'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Delivered ({records.filter((r) => r.printStatus === 'delivered').length})
+          </button>
+          <button
+            onClick={() => setStatusFilter('pending')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+              statusFilter === 'pending'
+                ? 'bg-slate-700 text-white'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Pending ({records.filter((r) => !r.printStatus || r.printStatus === 'pending').length})
           </button>
         </div>
 
@@ -104,12 +183,22 @@ export default function RecordTable({
                 <span>Delete ({selectedIds.length})</span>
               </button>
 
+              {onSendToPrint && (
+                <button
+                  onClick={() => onSendToPrint(selectedIds)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 border border-blue-500/30 transition-colors"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Send to Print ({selectedIds.length})</span>
+                </button>
+              )}
+
               <button
                 onClick={() => onOpenPrintModal(selectedIds)}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-lg shadow-indigo-600/30 transition-colors"
               >
                 <Printer className="w-3.5 h-3.5" />
-                <span>Print Selected ({selectedIds.length})</span>
+                <span>Print Preview ({selectedIds.length})</span>
               </button>
             </>
           )}
@@ -241,19 +330,7 @@ export default function RecordTable({
                     </td>
 
                     {/* Print Status */}
-                    <td className="p-3">
-                      {record.printStatus === 'printed' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px]">
-                          <CheckCircle className="w-3 h-3" />
-                          Printed
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[11px]">
-                          <Clock className="w-3 h-3" />
-                          Pending
-                        </span>
-                      )}
-                    </td>
+                    <td className="p-3">{renderStatusBadge(record.printStatus)}</td>
 
                     {/* Actions */}
                     <td className="p-3 text-right">
@@ -267,7 +344,7 @@ export default function RecordTable({
                         </button>
                         <button
                           onClick={() => onOpenPrintModal([record.id])}
-                          title="Print This Card"
+                          title="Preview Card & Send to Print"
                           className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-slate-800 rounded-lg"
                         >
                           <Printer className="w-4 h-4" />

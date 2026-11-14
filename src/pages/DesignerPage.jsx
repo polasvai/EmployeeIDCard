@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import CardCanvas from '../components/designer/CardCanvas';
 import ElementToolbar from '../components/designer/ElementToolbar';
@@ -27,13 +28,14 @@ import {
   Layers,
   Building,
   X,
+  Lock,
 } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY_TEMPLATES = 'id_studio_templates';
 const LOCAL_STORAGE_KEY_ACTIVE_ID = 'id_studio_active_template_id';
 
 export default function DesignerPage() {
-  const { currentUser } = useAuth();
+  const { currentUser, organization, isSuperAdmin } = useAuth();
   const [templates, setTemplates] = useState(DEFAULT_TEMPLATES);
   const [activeTemplateId, setActiveTemplateId] = useState(DEFAULT_TEMPLATES[0].id);
   const [currentSide, setCurrentSide] = useState('front'); // 'front' | 'back'
@@ -344,6 +346,51 @@ export default function DesignerPage() {
   const selectedElement = activeElements.find((el) => el.id === selectedId) || null;
   const currentBackground =
     currentSide === 'front' ? activeTemplate.frontBackground : activeTemplate.backBackground;
+
+  if (!isSuperAdmin && organization?.designerEnabled === false) {
+    return (
+      <div className="h-[calc(100vh-4rem)] bg-slate-950 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-4 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mx-auto flex items-center justify-center shadow-lg shadow-amber-500/10">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-100">Card Designer Locked</h2>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Card Designer access has been disabled for <strong className="text-slate-200">{organization?.name || 'your organization'}</strong> by the Super Administrator.
+          </p>
+          <div className="p-3.5 bg-slate-800/60 rounded-xl border border-slate-700/60 text-[11px] text-slate-400 text-left space-y-1.5">
+            <p className="font-semibold text-slate-300">Authorized actions available:</p>
+            <p className="flex items-center gap-1.5 text-slate-300">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Enter and manage cardholder data in Data Entry</span>
+            </p>
+            <p className="flex items-center gap-1.5 text-slate-300">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Import rosters via CSV and crop portraits</span>
+            </p>
+            <p className="flex items-center gap-1.5 text-slate-300">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Preview sheets & submit jobs to the Print Queue</span>
+            </p>
+          </div>
+          <div className="pt-2 flex justify-center gap-3">
+            <Link
+              to="/entry"
+              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition-colors shadow-lg shadow-indigo-600/20"
+            >
+              Go to Data Entry
+            </Link>
+            <Link
+              to="/records"
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs transition-colors"
+            >
+              View Records & Print Queue
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">

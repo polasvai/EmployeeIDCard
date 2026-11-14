@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import { exportCardsPdf } from '../../utils/pdfExporter';
 import {
   X,
@@ -8,16 +9,22 @@ import {
   CheckCircle2,
   AlertCircle,
   Download,
+  Send,
+  ShieldAlert,
+  Clock,
+  Layers,
 } from 'lucide-react';
 
 export default function PrintPreviewModal({
   isOpen,
   onClose,
-  records,
+  records = [],
   template,
   templates = [],
   onMarkPrinted,
+  onSendToPrint,
 }) {
+  const { isSuperAdmin } = useAuth();
   const [mode, setMode] = useState('a4'); // 'a4' | 'a3' | 'single'
   const [includeBack, setIncludeBack] = useState(true);
   const [mirrorBack, setMirrorBack] = useState(true);
@@ -25,7 +32,8 @@ export default function PrintPreviewModal({
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0, percentage: 0, statusText: '' });
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
+  const [successMsg, setSuccessMsg] = useState(null);
+  const [superAdminAutoStatus, setSuperAdminAutoStatus] = useState('printing'); // 'printing' | 'printed' | 'none'
 
   if (!isOpen) return null;
 
@@ -44,11 +52,30 @@ export default function PrintPreviewModal({
 
   const estimatedSheets = Math.ceil(records.length / cardsPerSheet);
 
+  // Normal User Action: Send to Print Queue
+  const handleSendToPrintQueue = () => {
+    try {
+      const recordIds = records.map((r) => r.id);
+      if (onSendToPrint) {
+        onSendToPrint(recordIds);
+      }
+      setSuccessMsg(
+        `Successfully sent ${records.length} card(s) to the Print Production Queue! Super Admin will review and print.`
+      );
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (err) {
+      setError('Failed to send to print queue.');
+    }
+  };
+
+  // Super Admin Action: Generate & Download 300 DPI PDF
   const handleGeneratePdf = async () => {
     try {
       setGenerating(true);
       setError(null);
-      setSuccess(false);
+      setSuccessMsg(null);
 
       const result = await exportCardsPdf({
         template: activeTemplate,
@@ -66,9 +93,11 @@ export default function PrintPreviewModal({
       const filename = `ID_Cards_${mode.toUpperCase()}_${dateStr}.pdf`;
       result.download(filename);
 
-      setSuccess(true);
-      if (onMarkPrinted) {
-        onMarkPrinted(records.map((r) => r.id));
+      setSuccessMsg(`PDF exported successfully! Filename: ${filename}`);
+
+      // Update statuses if requested
+      if (superAdminAutoStatus !== 'none' && onMarkPrinted) {
+        onMarkPrinted(records.map((r) => r.id), superAdminAutoStatus);
       }
     } catch (err) {
       console.error('PDF export error:', err);
@@ -85,7 +114,9 @@ export default function PrintPreviewModal({
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Printer className="w-5 h-5 text-indigo-400" />
-            <h3 className="font-semibold text-slate-100 text-sm">Print & PDF Imposition Center</h3>
+            <h3 className="font-semibold text-slate-100 text-sm">
+              {isSuperAdmin ? 'Super Admin Print Production & PDF Hub' : 'Print Preview & Queue Submission'}
+            </h3>
           </div>
           <button
             onClick={onClose}
@@ -97,7 +128,24 @@ export default function PrintPreviewModal({
         </div>
 
         {/* Content */}
-        <div className="p-5 space-y-4 text-xs">
+        <div className="p-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
+          {/* Role Status Note */}
+          {isSuperAdmin ? (
+            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-200 font-bold uppercase text-[10px]">
+                Super Admin
+              </span>
+              <span>Full Print Master privileges enabled: 300 DPI PDF export and status advancement.</span>
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 flex items-center gap-2">
+              <Clock className="w-4 h-4 shrink-0 text-blue-400" />
+              <span>
+                <strong>Print Workflow:</strong> Preview your cards below and click <strong>&quot;Send to Print&quot;</strong>. Production and PDF export are handled by the Super Admin print team.
+              </span>
+            </div>
+          )}
+
           {error && (
             <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -105,10 +153,10 @@ export default function PrintPreviewModal({
             </div>
           )}
 
-          {success && (
+          {successMsg && (
             <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>PDF generated and downloaded successfully! Records marked as printed.</span>
+              <span>{successMsg}</span>
             </div>
           )}
 
@@ -138,7 +186,7 @@ export default function PrintPreviewModal({
           {/* Mode Selection Cards */}
           <div className="space-y-2">
             <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
-              Select Output Format:
+              Select Print Imposition Sheet Format:
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {/* A4 Sheet */}
@@ -202,7 +250,7 @@ export default function PrintPreviewModal({
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-slate-200">Include Back Side</p>
-                <p className="text-[11px] text-slate-400">Renders back side elements and barcodes</p>
+                <p className="text-[11px] text-slate-400">Renders back side elements, barcodes, and terms</p>
               </div>
               <input
                 type="checkbox"
@@ -230,16 +278,60 @@ export default function PrintPreviewModal({
             )}
           </div>
 
-          {/* Summary */}
+          {/* Super Admin Status Options */}
+          {isSuperAdmin && (
+            <div className="p-3.5 bg-purple-950/20 rounded-xl border border-purple-800/30 space-y-2">
+              <label className="font-semibold text-purple-200 uppercase tracking-wider text-[11px] block">
+                Update Status on Download:
+              </label>
+              <div className="flex items-center gap-4 text-slate-300">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="autoStatus"
+                    value="printing"
+                    checked={superAdminAutoStatus === 'printing'}
+                    onChange={() => setSuperAdminAutoStatus('printing')}
+                    className="text-purple-600 focus:ring-0"
+                  />
+                  <span>Mark as &quot;Printing in Process&quot;</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="autoStatus"
+                    value="printed"
+                    checked={superAdminAutoStatus === 'printed'}
+                    onChange={() => setSuperAdminAutoStatus('printed')}
+                    className="text-purple-600 focus:ring-0"
+                  />
+                  <span>Mark as &quot;Printed&quot;</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="autoStatus"
+                    value="none"
+                    checked={superAdminAutoStatus === 'none'}
+                    onChange={() => setSuperAdminAutoStatus('none')}
+                    className="text-purple-600 focus:ring-0"
+                  />
+                  <span>Keep Current Status</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Imposition Summary */}
           <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between text-slate-400">
             <div>
               <span className="font-semibold text-slate-200">{records.length}</span> cards selected
               {mode !== 'single' && ` • ~${estimatedSheets} ${mode.toUpperCase()} sheet${estimatedSheets > 1 ? 's' : ''}`}
             </div>
-            <span className="font-mono text-indigo-400 text-[11px]">300 DPI Vector PDF</span>
+            <span className="font-mono text-indigo-400 text-[11px]">300 DPI Vector Output</span>
           </div>
 
-          {/* Progress Bar */}
+          {/* Progress Bar (Super Admin generating PDF) */}
           {generating && (
             <div className="space-y-2 pt-2">
               <div className="flex justify-between text-[11px] text-slate-400">
@@ -257,7 +349,7 @@ export default function PrintPreviewModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-800 flex items-center justify-end gap-2 bg-slate-900 text-xs">
+        <div className="p-4 border-t border-slate-800 flex items-center justify-between bg-slate-900 text-xs">
           <button
             onClick={onClose}
             disabled={generating}
@@ -265,14 +357,28 @@ export default function PrintPreviewModal({
           >
             Close
           </button>
-          <button
-            onClick={handleGeneratePdf}
-            disabled={generating || records.length === 0}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-lg shadow-indigo-600/30 disabled:opacity-50"
-          >
-            <Download className="w-4 h-4" />
-            <span>{generating ? 'Generating 300 DPI PDF...' : 'Download Print PDF'}</span>
-          </button>
+
+          {isSuperAdmin ? (
+            /* Super Admin can Download PDF */
+            <button
+              onClick={handleGeneratePdf}
+              disabled={generating || records.length === 0}
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-medium shadow-lg shadow-purple-600/30 disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" />
+              <span>{generating ? 'Rendering 300 DPI PDF...' : 'Download Print PDF (Super Admin)'}</span>
+            </button>
+          ) : (
+            /* Regular User: Sent to Print Button */
+            <button
+              onClick={handleSendToPrintQueue}
+              disabled={records.length === 0}
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-lg shadow-indigo-600/30 disabled:opacity-50"
+            >
+              <Send className="w-4 h-4" />
+              <span>Send to Print ({records.length} Cards)</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -1,9 +1,25 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { CreditCard, LogOut, Cloud, HardDrive, Building2, User } from 'lucide-react';
+import {
+  CreditCard,
+  LogOut,
+  Cloud,
+  HardDrive,
+  Building2,
+  User,
+  Shield,
+  ArrowLeftRight,
+} from 'lucide-react';
 
 export default function Navbar() {
-  const { currentUser, organization, isFirebaseConfigured, logout } = useAuth();
+  const {
+    currentUser,
+    organization,
+    isFirebaseConfigured,
+    isSuperAdmin,
+    switchRole,
+    logout,
+  } = useAuth();
 
   return (
     <header className="h-16 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-6 flex items-center justify-between sticky top-0 z-40">
@@ -21,22 +37,49 @@ export default function Navbar() {
           </h1>
           <p className="text-xs text-slate-400 flex items-center gap-1.5">
             <Building2 className="w-3 h-3 text-slate-500" />
-            {organization?.name || 'My Organization'}
+            {isSuperAdmin
+              ? 'Super Admin Production HQ'
+              : organization?.name || 'My Organization'}
           </p>
         </div>
       </div>
 
       {/* Right Actions & Status */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-3">
+        {/* Role Toggle Switcher for Testing */}
+        {currentUser && (
+          <button
+            onClick={() => switchRole(isSuperAdmin ? 'user' : 'superadmin')}
+            title="Switch between Regular User and Super Admin to test permissions"
+            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border transition-all ${
+              isSuperAdmin
+                ? 'bg-purple-600/20 text-purple-300 border-purple-500/40 hover:bg-purple-600/30'
+                : 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40 hover:bg-indigo-600/30'
+            }`}
+          >
+            <Shield className="w-3.5 h-3.5" />
+            <span className="font-semibold">
+              {isSuperAdmin ? 'Role: Super Admin' : 'Role: Org User'}
+            </span>
+            <ArrowLeftRight className="w-3 h-3 text-slate-400 ml-1" />
+          </button>
+        )}
+
         {/* Environment Status Badge */}
         {isFirebaseConfigured ? (
-          <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" title="Connected to Google Firebase">
+          <div
+            className="hidden sm:flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+            title="Connected to Google Firebase"
+          >
             <Cloud className="w-3.5 h-3.5" />
             <span>Firebase Cloud</span>
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20" title="Running client-side without cloud keys">
+          <div
+            className="hidden sm:flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20"
+            title="Running client-side without cloud keys"
+          >
             <HardDrive className="w-3.5 h-3.5" />
             <span>Local Demo Mode</span>
             <span className="w-2 h-2 rounded-full bg-amber-400"></span>
