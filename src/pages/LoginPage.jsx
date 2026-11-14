@@ -24,6 +24,7 @@ export default function LoginPage() {
     registerWithEmail,
     loginWithGoogle,
     loginAsDemo,
+    loginAsSuperAdmin,
     isFirebaseConfigured,
   } = useAuth();
   const navigate = useNavigate();
@@ -62,6 +63,11 @@ export default function LoginPage() {
     navigate('/dashboard');
   };
 
+  const handleSuperAdminLogin = async () => {
+    await loginAsSuperAdmin();
+    navigate('/admin');
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background glow effects */}
@@ -80,21 +86,54 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Demo Fast-Track Pill */}
-        <div className="p-3 bg-gradient-to-r from-indigo-950/60 to-purple-950/60 border border-indigo-500/30 rounded-2xl flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-            <div className="text-left text-xs">
-              <p className="font-semibold text-slate-200">Instant Demo Mode</p>
-              <p className="text-[11px] text-slate-400">Try all features with pre-loaded mock roster</p>
+        {/* Fast-Track 1-Click Launch Buttons */}
+        <div className="space-y-2">
+          {/* Org User Demo */}
+          <div className="p-3 bg-gradient-to-r from-indigo-950/60 to-slate-900 border border-indigo-500/30 rounded-2xl flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+              <div className="text-left text-xs">
+                <p className="font-semibold text-slate-200">Organization User</p>
+                <p className="text-[11px] text-slate-400">Client roster, data entry & print preview</p>
+              </div>
             </div>
+            <button
+              onClick={handleDemoLogin}
+              className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs shadow-md shadow-indigo-600/30 transition-all shrink-0"
+            >
+              Demo User
+            </button>
           </div>
-          <button
-            onClick={handleDemoLogin}
-            className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs shadow-md shadow-indigo-600/30 transition-all shrink-0"
-          >
-            Launch Demo
-          </button>
+
+          {/* Super Admin Instant Login */}
+          <div className="p-3 bg-gradient-to-r from-purple-950/60 to-slate-900 border border-purple-500/40 rounded-2xl flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0" />
+              <div className="text-left text-xs">
+                <p className="font-semibold text-slate-200">Super Admin (Master)</p>
+                <p className="text-[11px] text-slate-400">All orgs, designer toggle & 300 DPI PDF</p>
+              </div>
+            </div>
+            <button
+              onClick={handleSuperAdminLogin}
+              className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-medium text-xs shadow-md shadow-purple-600/30 transition-all shrink-0"
+            >
+              Super Admin
+            </button>
+          </div>
+        </div>
+
+        {/* Credentials Info Callout */}
+        <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-[11px] text-slate-400 space-y-1">
+          <p className="font-semibold text-slate-300">🔑 Super Admin Login Credentials:</p>
+          <div className="flex justify-between font-mono text-[10px]">
+            <span>Email:</span>
+            <span className="text-purple-300 font-bold">superadmin@idcardstudio.com</span>
+          </div>
+          <div className="flex justify-between font-mono text-[10px]">
+            <span>Password:</span>
+            <span className="text-slate-200">any password (e.g. admin123)</span>
+          </div>
         </div>
 
         {/* Auth Mode Toggle */}
