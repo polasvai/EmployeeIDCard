@@ -5,14 +5,20 @@ import { db, isFirebaseConfigured } from '../../config/firebase';
 import { writeBatch, doc, collection, serverTimestamp } from 'firebase/firestore';
 
 const STANDARD_FIELDS = [
-  { key: 'fullName', label: 'Full Name (Required)', required: true },
-  { key: 'idNumber', label: 'ID / Badge / Roll No (Required)', required: true },
+  { key: 'fullName', label: 'Full Name (English) *', required: true },
+  { key: 'nameBangla', label: 'Bangla Name (নাম - বাংলায়)', required: false },
+  { key: 'idNumber', label: 'ID / Badge / Roll No *', required: true },
   { key: 'department', label: 'Department / Faculty / Stream', required: false },
   { key: 'designation', label: 'Designation / Class / Role', required: false },
   { key: 'roleType', label: 'Role Type (Employee/Student)', required: false },
   { key: 'bloodGroup', label: 'Blood Group', required: false },
   { key: 'gender', label: 'Gender', required: false },
   { key: 'dateOfBirth', label: 'Date of Birth', required: false },
+  { key: 'fatherName', label: "Father's Name (পিতার নাম)", required: false },
+  { key: 'motherName', label: "Mother's Name (মাতার নাম)", required: false },
+  { key: 'maritalStatus', label: 'Marital Status', required: false },
+  { key: 'religion', label: 'Religion', required: false },
+  { key: 'district', label: 'Home District / Birth Place', required: false },
   { key: 'nationality', label: 'Nationality', required: false },
   { key: 'nationalId', label: 'National ID / SSN / Passport', required: false },
   { key: 'joiningDate', label: 'Joining / Admission Date', required: false },

@@ -5,7 +5,7 @@ import RecordTable from '../components/records/RecordTable';
 import BulkImportModal from '../components/records/BulkImportModal';
 import PhotoCropModal from '../components/records/PhotoCropModal';
 import PrintPreviewModal from '../components/print/PrintPreviewModal';
-import { DEFAULT_TEMPLATE } from '../constants/printSpecs';
+import { DEFAULT_TEMPLATE, DEFAULT_TEMPLATES } from '../constants/printSpecs';
 import { db, isFirebaseConfigured } from '../config/firebase';
 import {
   collection,
@@ -32,28 +32,31 @@ const LOCAL_STORAGE_KEY_RECORDS = 'id_studio_records';
 const SAMPLE_RECORDS = [
   {
     id: 'rec-001',
+    templateId: 'tpl-corporate',
     fullName: 'Alexander R. Morgan',
+    nameBangla: 'আলেকজান্ডার আর. মরগান',
     idNumber: 'EMP-892041',
     photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=360&fit=crop&crop=face',
     customFields: {
+      nameBangla: 'আলেকজান্ডার আর. মরগান',
       department: 'Software Engineering',
       designation: 'Senior Solutions Architect',
       roleType: 'Employee',
       gender: 'Male',
       dateOfBirth: '1992-04-15',
       bloodGroup: 'O+',
-      nationality: 'American',
+      nationality: 'Bangladeshi',
       nationalId: 'NID-94820194',
       campus: 'Silicon Valley Campus',
       joiningDate: '2021-03-01',
       validThru: '2028-12-31',
       reportingManager: 'V. Patel',
-      phone: '+1 (555) 234-5678',
+      phone: '+880 1711-234567',
       email: 'alexander.morgan@company.com',
       emergencyContactName: 'Mary Morgan',
       emergencyContactRelation: 'Spouse',
-      emergencyPhone: '+1 (555) 998-1122',
-      address: '742 Evergreen Terrace, Springfield, OR',
+      emergencyPhone: '+880 1819-998811',
+      address: 'House #12, Road #4, Dhanmondi, Dhaka',
       rfid: '04:A3:2B:9C:1D:6E',
       status: 'active',
     },
@@ -62,28 +65,31 @@ const SAMPLE_RECORDS = [
   },
   {
     id: 'rec-002',
+    templateId: 'tpl-healthcare',
     fullName: 'Dr. Sarah Lin Chen',
-    idNumber: 'EMP-774120',
+    nameBangla: 'ডাঃ সারাহ লিন চেন',
+    idNumber: 'MED-774120',
     photoUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&h=360&fit=crop&crop=face',
     customFields: {
+      nameBangla: 'ডাঃ সারাহ লিন চেন',
       department: 'Biotechnology Research',
-      designation: 'Lead Investigator',
+      designation: 'Lead Medical Investigator',
       roleType: 'Faculty',
       gender: 'Female',
       dateOfBirth: '1988-11-23',
       bloodGroup: 'A+',
-      nationality: 'Canadian',
-      nationalId: 'CAN-8812903',
-      campus: 'BioTech Tower 3',
+      nationality: 'Bangladeshi',
+      nationalId: 'NID-88129031',
+      campus: 'Central Specialized Hospital',
       joiningDate: '2019-08-15',
       validThru: '2028-12-31',
       reportingManager: 'Dr. E. Thorne',
-      phone: '+1 (555) 345-6789',
+      phone: '+880 1712-345678',
       email: 's.chen@bioresearch.org',
       emergencyContactName: 'David Chen',
       emergencyContactRelation: 'Brother',
-      emergencyPhone: '+1 (555) 887-3344',
-      address: '120 Science Pkwy, Boston, MA',
+      emergencyPhone: '+880 1811-887334',
+      address: 'Plot 4, Mirpur Road, Dhaka',
       rfid: '04:F1:C8:3A:4E:22',
       status: 'active',
     },
@@ -92,28 +98,33 @@ const SAMPLE_RECORDS = [
   },
   {
     id: 'rec-003',
-    fullName: 'Marcus Vance',
-    idNumber: 'EMP-331902',
+    templateId: 'tpl-academic',
+    fullName: 'Mohammad Tanvir Hasan',
+    nameBangla: 'মোহাম্মদ তানভীর হাসান',
+    idNumber: 'STU-2026-0891',
     photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=360&fit=crop&crop=face',
     customFields: {
-      department: 'Global Operations',
-      designation: 'Director of Logistics',
-      roleType: 'Employee',
+      nameBangla: 'মোহাম্মদ তানভীর হাসান',
+      department: 'Computer Science & Engineering',
+      designation: 'Undergraduate Student (Roll: 891)',
+      roleType: 'Student',
       gender: 'Male',
-      dateOfBirth: '1985-07-09',
+      dateOfBirth: '2004-02-14',
       bloodGroup: 'B+',
-      nationality: 'British',
-      nationalId: 'UK-7729104',
-      campus: 'Logistics Hub North',
-      joiningDate: '2020-01-10',
-      validThru: '2027-06-30',
-      reportingManager: 'G. Sterling',
-      phone: '+1 (555) 456-7890',
-      email: 'm.vance@globallogistics.com',
-      emergencyContactName: 'Clara Vance',
-      emergencyContactRelation: 'Spouse',
-      emergencyPhone: '+1 (555) 776-5566',
-      address: '45 Docklands St, Seattle, WA',
+      nationality: 'Bangladeshi',
+      nationalId: 'NID-77291044',
+      campus: 'Academic Hall B',
+      joiningDate: '2024-01-10',
+      validThru: '2028-12-31',
+      reportingManager: 'Prof. S. Rahman',
+      phone: '+880 1913-456789',
+      email: 'tanvir.hasan@modelcollege.edu.bd',
+      fatherName: 'Md. Delwar Hossain',
+      motherName: 'Tahmina Begum',
+      emergencyContactName: 'Md. Delwar Hossain',
+      emergencyContactRelation: 'Father',
+      emergencyPhone: '+880 1715-776556',
+      address: '22 Chawkbazar, Chittagong',
       rfid: '04:77:2D:BE:01:99',
       status: 'active',
     },
@@ -122,10 +133,13 @@ const SAMPLE_RECORDS = [
   },
   {
     id: 'rec-004',
+    templateId: 'tpl-corporate',
     fullName: 'Elena Rostova',
+    nameBangla: 'এলেনা রোস্তোভা',
     idNumber: 'EMP-990412',
     photoUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&h=360&fit=crop&crop=face',
     customFields: {
+      nameBangla: 'এলেনা রোস্তোভা',
       department: 'Financial Advisory',
       designation: 'Chief Risk Officer',
       roleType: 'Employee',
@@ -158,6 +172,7 @@ export default function RecordsPage() {
   const [records, setRecords] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [templates, setTemplates] = useState(DEFAULT_TEMPLATES);
   const [activeTemplate, setActiveTemplate] = useState(DEFAULT_TEMPLATE);
 
   // Modals
@@ -188,6 +203,17 @@ export default function RecordsPage() {
   useEffect(() => {
     async function fetchRecords() {
       setLoading(true);
+
+      // Load saved templates
+      const savedTemplates = localStorage.getItem('id_studio_templates');
+      if (savedTemplates) {
+        try {
+          const parsed = JSON.parse(savedTemplates);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setTemplates(parsed);
+          }
+        } catch (e) {}
+      }
 
       // Load saved template if available
       const savedTemplate = localStorage.getItem('id_studio_active_template');
@@ -526,6 +552,7 @@ export default function RecordsPage() {
           onClose={() => setIsPrintOpen(false)}
           records={recordsToPrint}
           template={activeTemplate}
+          templates={templates}
           onMarkPrinted={handleMarkPrinted}
         />
       )}

@@ -4,9 +4,16 @@ import CardCanvas from '../components/designer/CardCanvas';
 import ElementToolbar from '../components/designer/ElementToolbar';
 import LayerPanel from '../components/designer/LayerPanel';
 import PropertyInspector from '../components/designer/PropertyInspector';
-import { DEFAULT_TEMPLATE } from '../constants/printSpecs';
+import { DEFAULT_TEMPLATES, DEFAULT_TEMPLATE } from '../constants/printSpecs';
 import { db, isFirebaseConfigured } from '../config/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  deleteDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
 import {
   Save,
   RotateCcw,
@@ -14,13 +21,21 @@ import {
   Shield,
   CheckCircle,
   AlertCircle,
+  Plus,
+  Copy,
+  Trash2,
+  Layers,
+  Building,
+  X,
 } from 'lucide-react';
 
-const LOCAL_STORAGE_KEY_TEMPLATE = 'id_studio_active_template';
+const LOCAL_STORAGE_KEY_TEMPLATES = 'id_studio_templates';
+const LOCAL_STORAGE_KEY_ACTIVE_ID = 'id_studio_active_template_id';
 
 export default function DesignerPage() {
   const { currentUser } = useAuth();
-  const [template, setTemplate] = useState(DEFAULT_TEMPLATE);
+  const [templates, setTemplates] = useState(DEFAULT_TEMPLATES);
+  const [activeTemplateId, setActiveTemplateId] = useState(DEFAULT_TEMPLATES[0].id);
   const [currentSide, setCurrentSide] = useState('front'); // 'front' | 'back'
   const [selectedId, setSelectedId] = useState(null);
   const [showSafeGuides, setShowSafeGuides] = useState(true);
@@ -28,36 +43,76 @@ export default function DesignerPage() {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState(null);
 
-  // Load template from Firestore or localStorage
+  // New Template Modal state
+  const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [newTemplateForm, setNewTemplateForm] = useState({
+    name: '',
+    department: '',
+    orientation: 'landscape',
+    cloneFromId: 'tpl-corporate',
+  });
+
+  // Load templates from Firestore or localStorage
   useEffect(() => {
-    async function loadTemplate() {
+    async function loadTemplates() {
       if (isFirebaseConfigured && db && currentUser?.uid) {
         try {
-          const tDoc = doc(db, 'organizations', currentUser.uid, 'templates', 'default');
-          const snap = await getDoc(tDoc);
-          if (snap.exists()) {
-            setTemplate({ ...DEFAULT_TEMPLATE, ...snap.data() });
+          const tCol = collection(db, 'organizations', currentUser.uid, 'templates');
+          const snap = await getDocs(tCol);
+          if (!snap.empty) {
+            const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+            setTemplates(list);
+            setActiveTemplateId(list[0].id);
             return;
           }
         } catch (e) {
-          console.warn('Failed loading template from firestore:', e);
+          console.warn('Failed loading templates from firestore:', e);
         }
       }
 
       // Local storage fallback
-      const saved = localStorage.getItem(LOCAL_STORAGE_KEY_TEMPLATE);
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY_TEMPLATES);
       if (saved) {
         try {
-          setTemplate(JSON.parse(saved));
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setTemplates(parsed);
+            const savedActiveId = localStorage.getItem(LOCAL_STORAGE_KEY_ACTIVE_ID);
+            if (savedActiveId && parsed.some((t) => t.id === savedActiveId)) {
+              setActiveTemplateId(savedActiveId);
+            } else {
+              setActiveTemplateId(parsed[0].id);
+            }
+            return;
+          }
         } catch (e) {}
       }
+
+      // Default preset templates
+      setTemplates(DEFAULT_TEMPLATES);
+      setActiveTemplateId(DEFAULT_TEMPLATES[0].id);
+      localStorage.setItem(LOCAL_STORAGE_KEY_TEMPLATES, JSON.stringify(DEFAULT_TEMPLATES));
     }
-    loadTemplate();
+
+    loadTemplates();
   }, [currentUser]);
+
+  const activeTemplate =
+    templates.find((t) => t.id === activeTemplateId) || templates[0] || DEFAULT_TEMPLATE;
 
   const showToast = (message, type = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
+  };
+
+  const saveTemplatesState = (updatedList, targetId = activeTemplateId) => {
+    setTemplates(updatedList);
+    setActiveTemplateId(targetId);
+    localStorage.setItem(LOCAL_STORAGE_KEY_TEMPLATES, JSON.stringify(updatedList));
+    localStorage.setItem(LOCAL_STORAGE_KEY_ACTIVE_ID, targetId);
+    // Also save active template for legacy compatibility
+    const active = updatedList.find((t) => t.id === targetId) || updatedList[0];
+    localStorage.setItem('id_studio_active_template', JSON.stringify(active));
   };
 
   const handleSave = async () => {
@@ -65,16 +120,15 @@ export default function DesignerPage() {
       setSaving(true);
 
       if (isFirebaseConfigured && db && currentUser?.uid) {
-        const tDoc = doc(db, 'organizations', currentUser.uid, 'templates', 'default');
+        const tDoc = doc(db, 'organizations', currentUser.uid, 'templates', activeTemplate.id);
         await setDoc(tDoc, {
-          ...template,
+          ...activeTemplate,
           updatedAt: serverTimestamp(),
         });
       }
 
-      // Always also save to localStorage for offline reliability
-      localStorage.setItem(LOCAL_STORAGE_KEY_TEMPLATE, JSON.stringify(template));
-      showToast('Template successfully saved!');
+      saveTemplatesState(templates, activeTemplate.id);
+      showToast(`Template "${activeTemplate.name}" saved!`);
     } catch (err) {
       console.error('Error saving template:', err);
       showToast(err.message || 'Failed to save template', 'error');
@@ -83,72 +137,213 @@ export default function DesignerPage() {
     }
   };
 
-  const handleReset = () => {
-    if (window.confirm('Reset template to standard corporate / school default layout?')) {
-      setTemplate(DEFAULT_TEMPLATE);
+  const handleSwitchTemplate = (id) => {
+    setActiveTemplateId(id);
+    setSelectedId(null);
+    localStorage.setItem(LOCAL_STORAGE_KEY_ACTIVE_ID, id);
+    const target = templates.find((t) => t.id === id);
+    if (target) {
+      localStorage.setItem('id_studio_active_template', JSON.stringify(target));
+    }
+  };
+
+  const handleCreateNewTemplate = async (e) => {
+    e.preventDefault();
+    if (!newTemplateForm.name.trim()) {
+      showToast('Template name is required', 'error');
+      return;
+    }
+
+    const baseTemplate =
+      templates.find((t) => t.id === newTemplateForm.cloneFromId) || DEFAULT_TEMPLATE;
+
+    const newId = `tpl-${Date.now()}`;
+    const newTemplate = {
+      ...baseTemplate,
+      id: newId,
+      name: newTemplateForm.name.trim(),
+      department: newTemplateForm.department.trim() || 'General',
+      orientation: newTemplateForm.orientation,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const updated = [...templates, newTemplate];
+    saveTemplatesState(updated, newId);
+
+    if (isFirebaseConfigured && db && currentUser?.uid) {
+      try {
+        const tDoc = doc(db, 'organizations', currentUser.uid, 'templates', newId);
+        await setDoc(tDoc, {
+          ...newTemplate,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn('Firestore template write failed:', err);
+      }
+    }
+
+    setIsNewModalOpen(false);
+    setNewTemplateForm({
+      name: '',
+      department: '',
+      orientation: 'landscape',
+      cloneFromId: 'tpl-corporate',
+    });
+    showToast(`Created new template "${newTemplate.name}"!`);
+  };
+
+  const handleDuplicateTemplate = async () => {
+    const dupId = `tpl-${Date.now()}`;
+    const duplicated = {
+      ...activeTemplate,
+      id: dupId,
+      name: `${activeTemplate.name} (Copy)`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const updated = [...templates, duplicated];
+    saveTemplatesState(updated, dupId);
+
+    if (isFirebaseConfigured && db && currentUser?.uid) {
+      try {
+        const tDoc = doc(db, 'organizations', currentUser.uid, 'templates', dupId);
+        await setDoc(tDoc, {
+          ...duplicated,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn('Firestore duplicate write failed:', err);
+      }
+    }
+
+    showToast(`Duplicated as "${duplicated.name}"!`);
+  };
+
+  const handleDeleteTemplate = async () => {
+    if (templates.length <= 1) {
+      showToast('Cannot delete the only template.', 'error');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to delete template "${activeTemplate.name}"?`)) {
+      return;
+    }
+
+    const remaining = templates.filter((t) => t.id !== activeTemplate.id);
+    const nextId = remaining[0].id;
+    saveTemplatesState(remaining, nextId);
+
+    if (isFirebaseConfigured && db && currentUser?.uid) {
+      try {
+        const tDoc = doc(db, 'organizations', currentUser.uid, 'templates', activeTemplate.id);
+        await deleteDoc(tDoc);
+      } catch (err) {
+        console.warn('Firestore template delete failed:', err);
+      }
+    }
+
+    showToast('Template deleted.');
+  };
+
+  const handleResetToPresets = () => {
+    if (window.confirm('Reset all templates to default standard templates (Corporate, Academic, Medical)?')) {
+      saveTemplatesState(DEFAULT_TEMPLATES, DEFAULT_TEMPLATES[0].id);
       setSelectedId(null);
-      localStorage.setItem(LOCAL_STORAGE_KEY_TEMPLATE, JSON.stringify(DEFAULT_TEMPLATE));
-      showToast('Template reset to default.');
+      showToast('Reset to default preset templates.');
     }
   };
 
   const handleOrientationToggle = () => {
-    const newOrientation = template.orientation === 'portrait' ? 'landscape' : 'portrait';
-    setTemplate((prev) => ({
-      ...prev,
-      orientation: newOrientation,
-    }));
+    const newOrientation = activeTemplate.orientation === 'portrait' ? 'landscape' : 'portrait';
+    const updated = templates.map((t) =>
+      t.id === activeTemplate.id ? { ...t, orientation: newOrientation } : t
+    );
+    saveTemplatesState(updated, activeTemplate.id);
     setSelectedId(null);
   };
 
   const activeElements =
-    (currentSide === 'front' ? template.frontElements : template.backElements) || [];
+    (currentSide === 'front' ? activeTemplate.frontElements : activeTemplate.backElements) || [];
 
   const handleAddElement = (newElem) => {
     const key = currentSide === 'front' ? 'frontElements' : 'backElements';
-    setTemplate((prev) => ({
-      ...prev,
-      [key]: [...(prev[key] || []), newElem],
-    }));
+    const updated = templates.map((t) => {
+      if (t.id === activeTemplate.id) {
+        return {
+          ...t,
+          [key]: [...(t[key] || []), newElem],
+        };
+      }
+      return t;
+    });
+    saveTemplatesState(updated, activeTemplate.id);
     setSelectedId(newElem.id);
   };
 
   const handleUpdateElement = (updatedElem) => {
     const key = currentSide === 'front' ? 'frontElements' : 'backElements';
-    setTemplate((prev) => ({
-      ...prev,
-      [key]: (prev[key] || []).map((el) => (el.id === updatedElem.id ? updatedElem : el)),
-    }));
+    const updated = templates.map((t) => {
+      if (t.id === activeTemplate.id) {
+        return {
+          ...t,
+          [key]: (t[key] || []).map((el) => (el.id === updatedElem.id ? updatedElem : el)),
+        };
+      }
+      return t;
+    });
+    saveTemplatesState(updated, activeTemplate.id);
   };
 
   const handleUpdateElements = (newElements) => {
     const key = currentSide === 'front' ? 'frontElements' : 'backElements';
-    setTemplate((prev) => ({
-      ...prev,
-      [key]: newElements,
-    }));
+    const updated = templates.map((t) => {
+      if (t.id === activeTemplate.id) {
+        return {
+          ...t,
+          [key]: newElements,
+        };
+      }
+      return t;
+    });
+    saveTemplatesState(updated, activeTemplate.id);
   };
 
   const handleDeleteElement = (id) => {
     const key = currentSide === 'front' ? 'frontElements' : 'backElements';
-    setTemplate((prev) => ({
-      ...prev,
-      [key]: (prev[key] || []).filter((el) => el.id !== id),
-    }));
+    const updated = templates.map((t) => {
+      if (t.id === activeTemplate.id) {
+        return {
+          ...t,
+          [key]: (t[key] || []).filter((el) => el.id !== id),
+        };
+      }
+      return t;
+    });
+    saveTemplatesState(updated, activeTemplate.id);
     if (selectedId === id) setSelectedId(null);
   };
 
   const handleUpdateBackground = (bg) => {
     const key = currentSide === 'front' ? 'frontBackground' : 'backBackground';
-    setTemplate((prev) => ({
-      ...prev,
-      [key]: bg,
-    }));
+    const updated = templates.map((t) => {
+      if (t.id === activeTemplate.id) {
+        return {
+          ...t,
+          [key]: bg,
+        };
+      }
+      return t;
+    });
+    saveTemplatesState(updated, activeTemplate.id);
   };
 
   const selectedElement = activeElements.find((el) => el.id === selectedId) || null;
   const currentBackground =
-    currentSide === 'front' ? template.frontBackground : template.backBackground;
+    currentSide === 'front' ? activeTemplate.frontBackground : activeTemplate.backBackground;
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
@@ -166,21 +361,76 @@ export default function DesignerPage() {
 
       {/* Top Designer Sub-Header Bar */}
       <div className="bg-slate-900 border-b border-slate-800 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
-        {/* Template Name & Orientation Toggle */}
-        <div className="flex items-center gap-3">
-          <input
-            type="text"
-            value={template.name || 'CR80 ID Template'}
-            onChange={(e) => setTemplate((prev) => ({ ...prev, name: e.target.value }))}
-            className="bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-2 py-1 font-semibold text-slate-100 text-sm focus:outline-none"
-          />
+        {/* Template Switcher Dropdown & Management */}
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 bg-slate-800 p-1 rounded-xl border border-slate-700">
+            <Layers className="w-3.5 h-3.5 text-indigo-400 ml-2" />
+            <select
+              value={activeTemplate.id}
+              onChange={(e) => handleSwitchTemplate(e.target.value)}
+              className="bg-transparent text-slate-100 font-semibold text-xs focus:outline-none pr-3 cursor-pointer"
+            >
+              {templates.map((tpl) => (
+                <option key={tpl.id} value={tpl.id} className="bg-slate-800 text-slate-200">
+                  {tpl.name} ({tpl.department || 'All'} - {tpl.orientation})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            onClick={() => setIsNewModalOpen(true)}
+            title="Create New Template for a Department"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 font-medium transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Template</span>
+          </button>
+
+          <button
+            onClick={handleDuplicateTemplate}
+            title="Duplicate Current Template"
+            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </button>
+
+          {templates.length > 1 && (
+            <button
+              onClick={handleDeleteTemplate}
+              title="Delete Current Template"
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-red-400 border border-slate-700 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          <div className="h-4 w-px bg-slate-800 mx-1" />
+
+          {/* Department Tag input for active template */}
+          <div className="flex items-center gap-1.5 text-slate-400 bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-700">
+            <Building className="w-3 h-3 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Assigned Dept..."
+              value={activeTemplate.department || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                const updated = templates.map((t) =>
+                  t.id === activeTemplate.id ? { ...t, department: val } : t
+                );
+                saveTemplatesState(updated, activeTemplate.id);
+              }}
+              className="bg-transparent border-none text-slate-200 text-[11px] focus:outline-none w-28"
+            />
+          </div>
 
           <button
             onClick={handleOrientationToggle}
             className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-mono text-[11px]"
-            title="Switch Landscape (85.6x53.98mm) / Portrait (53.98x85.6mm)"
+            title="Switch Landscape / Portrait"
           >
-            {template.orientation === 'portrait' ? 'Orientation: Portrait' : 'Orientation: Landscape'}
+            {activeTemplate.orientation === 'portrait' ? 'Portrait (CR80)' : 'Landscape (CR80)'}
           </button>
         </div>
 
@@ -245,9 +495,9 @@ export default function DesignerPage() {
           <div className="h-4 w-px bg-slate-800 mx-1" />
 
           <button
-            onClick={handleReset}
+            onClick={handleResetToPresets}
             className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
-            title="Reset to Default Template"
+            title="Reset All Templates to Presets"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -266,7 +516,7 @@ export default function DesignerPage() {
       {/* Toolbar */}
       <ElementToolbar
         onAddElement={handleAddElement}
-        orientation={template.orientation}
+        orientation={activeTemplate.orientation}
       />
 
       {/* Main Designer Canvas & Panels */}
@@ -282,7 +532,7 @@ export default function DesignerPage() {
 
         {/* Konva 300 DPI Canvas (Center) */}
         <CardCanvas
-          template={template}
+          template={activeTemplate}
           currentSide={currentSide}
           selectedId={selectedId}
           onSelectId={setSelectedId}
@@ -299,6 +549,108 @@ export default function DesignerPage() {
           onUpdateBackground={handleUpdateBackground}
         />
       </div>
+
+      {/* New Template Modal */}
+      {isNewModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-xs">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2 font-semibold text-slate-100">
+                <Layers className="w-4 h-4 text-indigo-400" />
+                <span>Create Department Card Template</span>
+              </div>
+              <button
+                onClick={() => setIsNewModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateNewTemplate} className="p-5 space-y-3.5">
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">
+                  Template Name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Science Faculty Staff ID"
+                  value={newTemplateForm.name}
+                  onChange={(e) =>
+                    setNewTemplateForm((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">
+                  Department / Target Group
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Science & Technology"
+                  value={newTemplateForm.department}
+                  onChange={(e) =>
+                    setNewTemplateForm((prev) => ({ ...prev, department: e.target.value }))
+                  }
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">Orientation</label>
+                  <select
+                    value={newTemplateForm.orientation}
+                    onChange={(e) =>
+                      setNewTemplateForm((prev) => ({ ...prev, orientation: e.target.value }))
+                    }
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200"
+                  >
+                    <option value="landscape">Landscape (85.6 × 53.98mm)</option>
+                    <option value="portrait">Portrait (53.98 × 85.6mm)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">Base Layout</label>
+                  <select
+                    value={newTemplateForm.cloneFromId}
+                    onChange={(e) =>
+                      setNewTemplateForm((prev) => ({ ...prev, cloneFromId: e.target.value }))
+                    }
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200"
+                  >
+                    {templates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsNewModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-lg shadow-indigo-600/30"
+                >
+                  Create Template
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

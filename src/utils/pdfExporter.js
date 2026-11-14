@@ -309,6 +309,8 @@ function drawCropMarks(page, x, y, width, height, markLength = 12) {
  */
 export async function exportCardsPdf({
   template,
+  templates = [],
+  templatesMap = {},
   records,
   mode = 'a4',
   includeBack = true,
@@ -319,8 +321,27 @@ export async function exportCardsPdf({
     throw new Error('No records selected for printing');
   }
 
+  // Build lookup map for multi-template rendering
+  const tplMap = { ...templatesMap };
+  if (Array.isArray(templates)) {
+    templates.forEach((t) => {
+      if (t?.id) tplMap[t.id] = t;
+    });
+  }
+  if (template?.id) {
+    tplMap[template.id] = template;
+  }
+
+  const getRecordTemplate = (rec) => {
+    if (rec.templateId && tplMap[rec.templateId]) {
+      return tplMap[rec.templateId];
+    }
+    return template || Object.values(tplMap)[0];
+  };
+
   const pdfDoc = await PDFDocument.create();
-  const isLandscape = template.orientation !== 'portrait';
+  const defaultTemplate = template || Object.values(tplMap)[0];
+  const isLandscape = defaultTemplate.orientation !== 'portrait';
 
   const cardWidthPt = isLandscape ? CR80.landscape.widthPt : CR80.portrait.widthPt;
   const cardHeightPt = isLandscape ? CR80.landscape.heightPt : CR80.portrait.heightPt;
@@ -338,16 +359,18 @@ export async function exportCardsPdf({
   const renderedCards = [];
   for (let i = 0; i < records.length; i++) {
     const record = records[i];
+    const recTemplate = getRecordTemplate(record);
+
     reportProgress(`Rendering front: ${record.fullName || `Card ${i + 1}`}`);
-    const frontDataUrl = await renderCardSideToCanvas(template, 'front', record);
+    const frontDataUrl = await renderCardSideToCanvas(recTemplate, 'front', record);
 
     let backDataUrl = null;
     if (includeBack) {
       reportProgress(`Rendering back: ${record.fullName || `Card ${i + 1}`}`);
-      backDataUrl = await renderCardSideToCanvas(template, 'back', record);
+      backDataUrl = await renderCardSideToCanvas(recTemplate, 'back', record);
     }
 
-    renderedCards.push({ record, frontDataUrl, backDataUrl });
+    renderedCards.push({ record, template: recTemplate, frontDataUrl, backDataUrl });
   }
 
   if (mode === 'single') {

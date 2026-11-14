@@ -28,6 +28,8 @@ export default function RecordTable({
   const filtered = records.filter((r) => {
     const matchesSearch =
       r.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.nameBangla?.includes(searchTerm) ||
+      r.customFields?.nameBangla?.includes(searchTerm) ||
       r.idNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.customFields?.department?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -202,6 +204,14 @@ export default function RecordTable({
                         </div>
                         <div>
                           <p className="font-semibold text-slate-100">{record.fullName}</p>
+                          {(record.nameBangla || record.customFields?.nameBangla) && (
+                            <p
+                              className="text-xs text-indigo-400 font-medium"
+                              style={{ fontFamily: '"Noto Sans Bengali", sans-serif' }}
+                            >
+                              {record.nameBangla || record.customFields?.nameBangla}
+                            </p>
+                          )}
                           <p className="text-[11px] text-slate-400">
                             {record.customFields?.designation || record.email || 'Member'}
                           </p>

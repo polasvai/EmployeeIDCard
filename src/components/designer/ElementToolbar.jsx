@@ -32,7 +32,7 @@ export default function ElementToolbar({ onAddElement, orientation }) {
     });
   };
 
-  const handleAddDynamic = (fieldKey, label, prefix = '') => {
+  const handleAddDynamic = (fieldKey, label, prefix = '', fontFamily = 'Inter') => {
     onAddElement({
       id: `elem-${Date.now()}`,
       type: 'dynamicText',
@@ -44,7 +44,7 @@ export default function ElementToolbar({ onAddElement, orientation }) {
       width: 450,
       height: 40,
       fontSize: 26,
-      fontFamily: 'Inter',
+      fontFamily,
       fontStyle: 'normal',
       fill: '#0f172a',
       align: 'left',
@@ -173,7 +173,7 @@ export default function ElementToolbar({ onAddElement, orientation }) {
         <div className="absolute left-0 top-full mt-1 w-60 max-h-96 overflow-y-auto bg-slate-800 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 hidden group-hover:block divide-y divide-slate-700/60">
           <div className="py-1">
             <span className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Identity Fields
+              Identity & Bangla Bio
             </span>
             <button
               onClick={() => handleAddDynamic('fullName', 'FULL NAME')}
@@ -182,10 +182,28 @@ export default function ElementToolbar({ onAddElement, orientation }) {
               &#123;&#123;fullName&#125;&#125;
             </button>
             <button
+              onClick={() => handleAddDynamic('nameBangla', 'পূর্ণ নাম (বাংলা)', '', 'Noto Sans Bengali')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-indigo-300 font-medium"
+            >
+              &#123;&#123;nameBangla&#125;&#125; (বাংলা নাম)
+            </button>
+            <button
               onClick={() => handleAddDynamic('idNumber', 'EMP-1001', 'ID: ')}
               className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
             >
               &#123;&#123;idNumber&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('fatherName', 'Father Name', 'Father: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;fatherName&#125;&#125; (পিতার নাম)
+            </button>
+            <button
+              onClick={() => handleAddDynamic('motherName', 'Mother Name', 'Mother: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;motherName&#125;&#125; (মাতার নাম)
             </button>
             <button
               onClick={() => handleAddDynamic('bloodGroup', 'O+', 'BLOOD: ')}
@@ -210,6 +228,12 @@ export default function ElementToolbar({ onAddElement, orientation }) {
               className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
             >
               &#123;&#123;nationalId&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('religion', 'Islam', 'Religion: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;religion&#125;&#125;
             </button>
           </div>
 

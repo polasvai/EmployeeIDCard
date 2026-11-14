@@ -14,23 +14,33 @@ import {
   CheckCircle,
   AlertCircle,
   Upload,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
 import PhotoCropModal from '../components/records/PhotoCropModal';
 import PrintPreviewModal from '../components/print/PrintPreviewModal';
-import { DEFAULT_TEMPLATE } from '../constants/printSpecs';
+import { DEFAULT_TEMPLATES, DEFAULT_TEMPLATE } from '../constants/printSpecs';
 import { db, isFirebaseConfigured } from '../config/firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { compressImageFile } from '../utils/imageProcessor';
 
 const INITIAL_FORM = {
+  templateId: 'tpl-corporate',
   fullName: '',
+  nameBangla: '',
   idNumber: '',
   photoUrl: '',
   gender: '',
   dateOfBirth: '',
   bloodGroup: '',
-  nationality: '',
+  nationality: 'Bangladeshi',
   nationalId: '',
+  fatherName: '',
+  motherName: '',
+  spouseName: '',
+  maritalStatus: '',
+  religion: '',
+  district: '',
   department: '',
   designation: '',
   roleType: 'Employee',
@@ -58,7 +68,8 @@ export default function DataEntryPage() {
   const editId = searchParams.get('id');
 
   const [formData, setFormData] = useState(INITIAL_FORM);
-  const [activeTab, setActiveTab] = useState('identity'); // 'identity' | 'org' | 'contact' | 'security'
+  const [activeTab, setActiveTab] = useState('identity'); // 'identity' | 'family' | 'org' | 'contact' | 'security'
+  const [templates, setTemplates] = useState(DEFAULT_TEMPLATES);
   const [activeTemplate, setActiveTemplate] = useState(DEFAULT_TEMPLATE);
   const [previewSide, setPreviewSide] = useState('front');
   const [loading, setLoading] = useState(false);
@@ -74,15 +85,20 @@ export default function DataEntryPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  // Load existing record if in edit mode, and active template
+  // Load templates & existing record (if editing)
   useEffect(() => {
-    // 1. Load active template
-    const savedTemplate = localStorage.getItem('id_studio_active_template');
-    if (savedTemplate) {
+    // 1. Load templates
+    const savedTemplates = localStorage.getItem('id_studio_templates');
+    let loadedTemplates = DEFAULT_TEMPLATES;
+    if (savedTemplates) {
       try {
-        setActiveTemplate(JSON.parse(savedTemplate));
+        const parsed = JSON.parse(savedTemplates);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          loadedTemplates = parsed;
+        }
       } catch (e) {}
     }
+    setTemplates(loadedTemplates);
 
     // 2. If editing existing record:
     if (editId) {
@@ -93,11 +109,15 @@ export default function DataEntryPage() {
             const snap = await getDoc(docRef);
             if (snap.exists()) {
               const data = snap.data();
-              setFormData({
+              const rec = {
                 ...INITIAL_FORM,
                 ...data,
                 ...(data.customFields || {}),
-              });
+              };
+              setFormData(rec);
+              const matchedTemplate =
+                loadedTemplates.find((t) => t.id === rec.templateId) || loadedTemplates[0];
+              setActiveTemplate(matchedTemplate);
               return;
             }
           } catch (e) {
@@ -105,28 +125,41 @@ export default function DataEntryPage() {
           }
         }
 
-        // Check local storage records
         const stored = localStorage.getItem('id_studio_records');
         if (stored) {
           try {
             const list = JSON.parse(stored);
             const found = list.find((r) => r.id === editId);
             if (found) {
-              setFormData({
+              const rec = {
                 ...INITIAL_FORM,
                 ...found,
                 ...(found.customFields || {}),
-              });
+              };
+              setFormData(rec);
+              const matchedTemplate =
+                loadedTemplates.find((t) => t.id === rec.templateId) || loadedTemplates[0];
+              setActiveTemplate(matchedTemplate);
             }
           } catch (e) {}
         }
       };
       loadRecord();
+    } else {
+      // New record: default to first template
+      setActiveTemplate(loadedTemplates[0]);
+      setFormData((prev) => ({ ...prev, templateId: loadedTemplates[0].id }));
     }
   }, [editId, currentUser]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+
+    // If template changed, update active template object for live preview
+    if (field === 'templateId') {
+      const selected = templates.find((t) => t.id === value);
+      if (selected) setActiveTemplate(selected);
+    }
   };
 
   const handlePhotoUpload = async (e) => {
@@ -158,19 +191,27 @@ export default function DataEntryPage() {
 
     const recordToSave = {
       id: recordId,
-      templateId: 'default',
+      templateId: formData.templateId || 'tpl-corporate',
       fullName: formData.fullName.trim(),
+      nameBangla: formData.nameBangla.trim(),
       idNumber: formData.idNumber.trim(),
       photoUrl: formData.photoUrl || null,
       printStatus: formData.printStatus || 'pending',
       createdAt: formData.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       customFields: {
+        nameBangla: formData.nameBangla.trim(),
         gender: formData.gender,
         dateOfBirth: formData.dateOfBirth,
         bloodGroup: formData.bloodGroup,
         nationality: formData.nationality,
         nationalId: formData.nationalId,
+        fatherName: formData.fatherName,
+        motherName: formData.motherName,
+        spouseName: formData.spouseName,
+        maritalStatus: formData.maritalStatus,
+        religion: formData.religion,
+        district: formData.district,
         department: formData.department,
         designation: formData.designation,
         roleType: formData.roleType,
@@ -231,7 +272,10 @@ export default function DataEntryPage() {
     const saved = await saveRecord();
     if (saved) {
       showToast('Record saved! Ready for next entry.');
-      setFormData(INITIAL_FORM);
+      setFormData({
+        ...INITIAL_FORM,
+        templateId: formData.templateId, // keep active template choice
+      });
       setActiveTab('identity');
       if (editId) navigate('/entry', { replace: true });
     }
@@ -247,6 +291,7 @@ export default function DataEntryPage() {
   // Build live preview record object for the card renderer
   const previewRecord = {
     fullName: formData.fullName || 'FULL NAME HERE',
+    nameBangla: formData.nameBangla || 'বাংলা নাম এখানে',
     idNumber: formData.idNumber || 'ID-000000',
     photoUrl: formData.photoUrl || null,
     customFields: {
@@ -257,6 +302,8 @@ export default function DataEntryPage() {
       validThru: formData.validThru || '2028-12-31',
     },
   };
+
+  const isLandscape = activeTemplate.orientation !== 'portrait';
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
@@ -287,7 +334,7 @@ export default function DataEntryPage() {
               {editId ? 'Edit ID Card Record' : 'Member Data Entry'}
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Enter complete identity, organizational, contact, and security details with live card preview
+              Enter complete personal, Bangla name, family, organizational, and security details with live preview
             </p>
           </div>
         </div>
@@ -323,57 +370,88 @@ export default function DataEntryPage() {
         </div>
       </div>
 
-      {/* Main Grid: Form (Left) & Live Card Preview (Right) */}
+      {/* Main Grid: Form (Left 7 Cols) & Live Card Preview (Right 5 Cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Form (7 Cols) */}
         <div className="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl overflow-hidden flex flex-col">
+          {/* Template Assignment Header Bar */}
+          <div className="p-4 bg-gradient-to-r from-indigo-950/60 to-slate-900 border-b border-slate-800 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs">
+              <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
+              <span className="font-semibold text-slate-200">Department Template:</span>
+            </div>
+            <select
+              value={formData.templateId}
+              onChange={(e) => handleInputChange('templateId', e.target.value)}
+              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-indigo-200 font-medium focus:border-indigo-500 cursor-pointer max-w-[280px]"
+            >
+              {templates.map((tpl) => (
+                <option key={tpl.id} value={tpl.id}>
+                  {tpl.name} ({tpl.department || 'All'} - {tpl.orientation})
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Navigation Tabs */}
-          <div className="flex border-b border-slate-800 bg-slate-900/60 p-2 text-xs gap-1">
+          <div className="flex border-b border-slate-800 bg-slate-900/60 p-2 text-xs gap-1 overflow-x-auto">
             <button
               onClick={() => setActiveTab('identity')}
-              className={`flex-1 py-2.5 px-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-all ${
+              className={`py-2 px-3 rounded-xl font-medium flex items-center justify-center gap-1.5 whitespace-nowrap transition-all ${
                 activeTab === 'identity'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
               }`}
             >
-              <User className="w-4 h-4" />
+              <User className="w-3.5 h-3.5" />
               <span>Identity & Bio</span>
             </button>
 
             <button
+              onClick={() => setActiveTab('family')}
+              className={`py-2 px-3 rounded-xl font-medium flex items-center justify-center gap-1.5 whitespace-nowrap transition-all ${
+                activeTab === 'family'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Family & Bangla Info</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('org')}
-              className={`flex-1 py-2.5 px-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-all ${
+              className={`py-2 px-3 rounded-xl font-medium flex items-center justify-center gap-1.5 whitespace-nowrap transition-all ${
                 activeTab === 'org'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
               }`}
             >
-              <Building className="w-4 h-4" />
+              <Building className="w-3.5 h-3.5" />
               <span>Organization</span>
             </button>
 
             <button
               onClick={() => setActiveTab('contact')}
-              className={`flex-1 py-2.5 px-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-all ${
+              className={`py-2 px-3 rounded-xl font-medium flex items-center justify-center gap-1.5 whitespace-nowrap transition-all ${
                 activeTab === 'contact'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
               }`}
             >
-              <Phone className="w-4 h-4" />
+              <Phone className="w-3.5 h-3.5" />
               <span>Contact & Emergency</span>
             </button>
 
             <button
               onClick={() => setActiveTab('security')}
-              className={`flex-1 py-2.5 px-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-all ${
+              className={`py-2 px-3 rounded-xl font-medium flex items-center justify-center gap-1.5 whitespace-nowrap transition-all ${
                 activeTab === 'security'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
               }`}
             >
-              <Shield className="w-4 h-4" />
+              <Shield className="w-3.5 h-3.5" />
               <span>Security & Extra</span>
             </button>
           </div>
@@ -436,7 +514,7 @@ export default function DataEntryPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-slate-300 font-medium mb-1">
-                      Full Name <span className="text-red-400">*</span>
+                      Full Name (English) <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="text"
@@ -444,10 +522,27 @@ export default function DataEntryPage() {
                       placeholder="e.g. Alexander R. Morgan"
                       value={formData.fullName}
                       onChange={(e) => handleInputChange('fullName', e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:border-indigo-500"
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:border-indigo-500 font-medium"
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-indigo-300 font-medium mb-1 flex items-center justify-between">
+                      <span>পূর্ণ নাম (বাংলায়) / Bangla Name</span>
+                      <span className="text-[10px] text-slate-400">Bangla Unicode</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="যেমন: মোঃ আব্দুল করিম"
+                      value={formData.nameBangla}
+                      onChange={(e) => handleInputChange('nameBangla', e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-indigo-200 focus:border-indigo-500 font-bangla text-sm"
+                      style={{ fontFamily: '"Noto Sans Bengali", sans-serif' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-slate-300 font-medium mb-1">
                       ID / Badge / Roll Number <span className="text-red-400">*</span>
@@ -455,10 +550,23 @@ export default function DataEntryPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. EMP-892041"
+                      placeholder="e.g. EMP-892041 or STU-2026-0891"
                       value={formData.idNumber}
                       onChange={(e) => handleInputChange('idNumber', e.target.value)}
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 font-mono focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-medium mb-1">
+                      National ID / Passport / NID
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 19922692019482710"
+                      value={formData.nationalId}
+                      onChange={(e) => handleInputChange('nationalId', e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 font-mono"
                     />
                   </div>
                 </div>
@@ -472,9 +580,9 @@ export default function DataEntryPage() {
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200"
                     >
                       <option value="">Select Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
+                      <option value="Male">Male / পুরুষ</option>
+                      <option value="Female">Female / মহিলা</option>
+                      <option value="Other">Other / অন্যান্য</option>
                     </select>
                   </div>
 
@@ -507,36 +615,122 @@ export default function DataEntryPage() {
                     </select>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* TAB 2: FAMILY & BANGLA INFO */}
+            {activeTab === 'family' && (
+              <div className="space-y-4">
+                <div className="p-3 bg-indigo-950/40 rounded-xl border border-indigo-500/20 text-[11px] text-indigo-300 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 shrink-0 text-amber-400" />
+                  <span>
+                    Additional identity & familial details for academic, governmental, or corporate registration.
+                  </span>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Nationality</label>
+                    <label className="block text-slate-300 font-medium mb-1">
+                      Father&apos;s Name / পিতার নাম
+                    </label>
                     <input
                       type="text"
-                      placeholder="e.g. American, Canadian, British"
-                      value={formData.nationality}
-                      onChange={(e) => handleInputChange('nationality', e.target.value)}
+                      placeholder="e.g. Md. Abdul Jalil / মোঃ আব্দুল জলিল"
+                      value={formData.fatherName}
+                      onChange={(e) => handleInputChange('fatherName', e.target.value)}
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200"
+                      style={{ fontFamily: '"Noto Sans Bengali", sans-serif' }}
                     />
                   </div>
 
                   <div>
                     <label className="block text-slate-300 font-medium mb-1">
-                      National ID / Passport / SSN
+                      Mother&apos;s Name / মাতার নাম
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. NID-492019482"
-                      value={formData.nationalId}
-                      onChange={(e) => handleInputChange('nationalId', e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 font-mono"
+                      placeholder="e.g. Rahima Khatun / রহিমা খাতুন"
+                      value={formData.motherName}
+                      onChange={(e) => handleInputChange('motherName', e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200"
+                      style={{ fontFamily: '"Noto Sans Bengali", sans-serif' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-slate-300 font-medium mb-1">
+                      Spouse&apos;s Name / স্বামী বা স্ত্রীর নাম (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Mary Morgan / নাসরিন সুলতানা"
+                      value={formData.spouseName}
+                      onChange={(e) => handleInputChange('spouseName', e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200"
+                      style={{ fontFamily: '"Noto Sans Bengali", sans-serif' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-medium mb-1">Marital Status</label>
+                    <select
+                      value={formData.maritalStatus}
+                      onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200"
+                    >
+                      <option value="">Select Status</option>
+                      <option value="Single">Single / অবিবাহিত</option>
+                      <option value="Married">Married / বিবাহিত</option>
+                      <option value="Divorced">Divorced / তালাকপ্রাপ্ত</option>
+                      <option value="Widowed">Widowed / বিধবা / বিপত্নীক</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-slate-300 font-medium mb-1">Religion / ধর্ম</label>
+                    <select
+                      value={formData.religion}
+                      onChange={(e) => handleInputChange('religion', e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200"
+                    >
+                      <option value="">Select Religion</option>
+                      <option value="Islam">Islam / ইসলাম</option>
+                      <option value="Hinduism">Hinduism / সনাতন</option>
+                      <option value="Christianity">Christianity / খ্রিস্টান</option>
+                      <option value="Buddhism">Buddhism / বৌদ্ধ</option>
+                      <option value="Other">Other / অন্যান্য</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-medium mb-1">Home District / জেলা</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Dhaka, Chittagong, Sylhet"
+                      value={formData.district}
+                      onChange={(e) => handleInputChange('district', e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-medium mb-1">Nationality</label>
+                    <input
+                      type="text"
+                      value={formData.nationality}
+                      onChange={(e) => handleInputChange('nationality', e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200"
                     />
                   </div>
                 </div>
               </div>
             )}
 
-            {/* TAB 2: ORGANIZATION / ACADEMIC */}
+            {/* TAB 3: ORGANIZATION / ACADEMIC */}
             {activeTab === 'org' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -555,7 +749,7 @@ export default function DataEntryPage() {
 
                   <div>
                     <label className="block text-slate-300 font-medium mb-1">
-                      Designation / Role / Grade
+                      Designation / Role / Grade / Class
                     </label>
                     <input
                       type="text"
@@ -588,7 +782,7 @@ export default function DataEntryPage() {
                     <label className="block text-slate-300 font-medium mb-1">Campus / Branch</label>
                     <input
                       type="text"
-                      placeholder="e.g. Main HQ / North Campus"
+                      placeholder="e.g. Main HQ / Dhanmondi Campus"
                       value={formData.campus}
                       onChange={(e) => handleInputChange('campus', e.target.value)}
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200"
@@ -596,7 +790,7 @@ export default function DataEntryPage() {
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Reporting Manager</label>
+                    <label className="block text-slate-300 font-medium mb-1">Reporting Manager / Advisor</label>
                     <input
                       type="text"
                       placeholder="e.g. Dr. Arthur Pendelton"
@@ -622,7 +816,7 @@ export default function DataEntryPage() {
 
                   <div>
                     <label className="block text-slate-300 font-medium mb-1">
-                      Card Expiry / Valid Until
+                      Card Expiry / Valid Until / Session
                     </label>
                     <input
                       type="date"
@@ -635,7 +829,7 @@ export default function DataEntryPage() {
               </div>
             )}
 
-            {/* TAB 3: CONTACT & EMERGENCY */}
+            {/* TAB 4: CONTACT & EMERGENCY */}
             {activeTab === 'contact' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -643,10 +837,10 @@ export default function DataEntryPage() {
                     <label className="block text-slate-300 font-medium mb-1">Phone / Mobile</label>
                     <input
                       type="tel"
-                      placeholder="e.g. +1 (555) 234-5678"
+                      placeholder="e.g. +880 1711-234567"
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200"
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 font-mono"
                     />
                   </div>
 
@@ -654,7 +848,7 @@ export default function DataEntryPage() {
                     <label className="block text-slate-300 font-medium mb-1">Email Address</label>
                     <input
                       type="email"
-                      placeholder="e.g. alexander@company.com"
+                      placeholder="e.g. user@organization.com"
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200"
@@ -694,10 +888,10 @@ export default function DataEntryPage() {
                       <label className="block text-slate-300 font-medium mb-1">Emergency Phone</label>
                       <input
                         type="tel"
-                        placeholder="e.g. +1 (555) 999-0011"
+                        placeholder="e.g. +880 1819-998877"
                         value={formData.emergencyPhone}
                         onChange={(e) => handleInputChange('emergencyPhone', e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 font-mono"
                       />
                     </div>
                   </div>
@@ -705,11 +899,11 @@ export default function DataEntryPage() {
 
                 <div>
                   <label className="block text-slate-300 font-medium mb-1">
-                    Residential Address
+                    Residential Address / স্থায়ী ঠিকানা
                   </label>
                   <textarea
                     rows={2}
-                    placeholder="e.g. 742 Evergreen Terrace, Springfield, OR 97477"
+                    placeholder="e.g. House #12, Road #4, Dhanmondi, Dhaka-1205"
                     value={formData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 resize-none"
@@ -718,7 +912,7 @@ export default function DataEntryPage() {
               </div>
             )}
 
-            {/* TAB 4: SECURITY & EXTRA */}
+            {/* TAB 5: SECURITY & EXTRA */}
             {activeTab === 'security' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -782,7 +976,7 @@ export default function DataEntryPage() {
                   </label>
                   <textarea
                     rows={3}
-                    placeholder="e.g. Severe peanut allergy; Authorized for Lab 4 access"
+                    placeholder="e.g. Authorized for Gate 2 entry; Verified background check."
                     value={formData.notes}
                     onChange={(e) => handleInputChange('notes', e.target.value)}
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 resize-none"
@@ -796,7 +990,13 @@ export default function DataEntryPage() {
         {/* Right Column: Live Interactive Card Preview (5 Cols) */}
         <div className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-slate-100 text-sm">Live CR80 Card Preview</h3>
+            <div>
+              <h3 className="font-semibold text-slate-100 text-sm">Live CR80 Card Preview</h3>
+              <p className="text-[11px] text-slate-400">
+                Template: <span className="text-indigo-400 font-medium">{activeTemplate.name}</span>
+              </p>
+            </div>
+
             {/* Front / Back Toggle */}
             <div className="flex bg-slate-800 p-1 rounded-lg border border-slate-700 text-xs">
               <button
@@ -806,7 +1006,7 @@ export default function DataEntryPage() {
                   previewSide === 'front' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Front Side
+                Front
               </button>
               <button
                 type="button"
@@ -815,72 +1015,133 @@ export default function DataEntryPage() {
                   previewSide === 'back' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Back Side
+                Back
               </button>
             </div>
           </div>
 
-          {/* Interactive Card Canvas Preview (Rendered Mini Card) */}
-          <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-700 bg-white aspect-[85.6/53.98] flex flex-col justify-between text-slate-900 select-none">
+          {/* Interactive Card Canvas Preview (Rendered Mini Card adapting to Landscape / Portrait) */}
+          <div
+            className={`relative rounded-2xl overflow-hidden shadow-2xl border border-slate-700 bg-white flex flex-col justify-between text-slate-900 select-none mx-auto ${
+              isLandscape ? 'aspect-[85.6/53.98] w-full' : 'aspect-[53.98/85.6] w-72'
+            }`}
+          >
             {previewSide === 'front' ? (
               <div className="h-full flex flex-col justify-between p-4 relative">
                 {/* Header bar */}
-                <div className="bg-blue-900 text-white -m-4 p-3 mb-2 flex items-center justify-between">
-                  <span className="font-bold tracking-wider text-xs uppercase">
-                    ACME GLOBAL ORGANIZATION
+                <div className="bg-slate-900 text-white -m-4 p-3 mb-2 flex items-center justify-between">
+                  <span className="font-bold tracking-wider text-xs uppercase truncate max-w-[200px]">
+                    {activeTemplate.name}
                   </span>
-                  <span className="text-[9px] bg-amber-500 text-slate-900 font-bold px-1.5 py-0.5 rounded">
-                    CR80
+                  <span className="text-[9px] bg-indigo-500 text-white font-bold px-1.5 py-0.5 rounded">
+                    300 DPI
                   </span>
                 </div>
 
-                <div className="flex gap-4 items-center flex-1 my-2">
-                  <div className="w-24 h-28 bg-slate-100 rounded-lg border-2 border-slate-300 overflow-hidden shrink-0 flex items-center justify-center">
-                    {formData.photoUrl ? (
-                      <img
-                        src={formData.photoUrl}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-10 h-10 text-slate-400" />
-                    )}
-                  </div>
+                {isLandscape ? (
+                  // Landscape layout
+                  <div className="flex gap-4 items-center flex-1 my-2">
+                    <div className="w-24 h-28 bg-slate-100 rounded-lg border-2 border-slate-300 overflow-hidden shrink-0 flex items-center justify-center">
+                      {formData.photoUrl ? (
+                        <img
+                          src={formData.photoUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-10 h-10 text-slate-400" />
+                      )}
+                    </div>
 
-                  <div className="space-y-1 min-w-0">
-                    <p className="font-bold text-sm text-slate-900 truncate">
-                      {formData.fullName || 'FULL NAME'}
-                    </p>
-                    <p className="font-mono text-xs font-semibold text-blue-600">
-                      ID: {formData.idNumber || 'EMP-000000'}
-                    </p>
-                    <p className="text-[11px] text-slate-600 truncate">
-                      Dept: {formData.department || 'General'}
-                    </p>
-                    <p className="text-[11px] text-slate-600 truncate">
-                      Role: {formData.designation || 'Member'}
-                    </p>
-                    {formData.bloodGroup && (
-                      <p className="text-[10px] font-semibold text-red-600">
-                        Blood: {formData.bloodGroup}
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <p className="font-bold text-sm text-slate-900 truncate">
+                        {formData.fullName || 'FULL NAME HERE'}
                       </p>
-                    )}
+                      {formData.nameBangla && (
+                        <p
+                          className="font-bold text-xs text-indigo-700 truncate"
+                          style={{ fontFamily: '"Noto Sans Bengali", sans-serif' }}
+                        >
+                          {formData.nameBangla}
+                        </p>
+                      )}
+                      <p className="font-mono text-xs font-semibold text-blue-600">
+                        ID: {formData.idNumber || 'ID-000000'}
+                      </p>
+                      <p className="text-[11px] text-slate-600 truncate">
+                        Dept: {formData.department || activeTemplate.department || 'General'}
+                      </p>
+                      <p className="text-[11px] text-slate-600 truncate">
+                        Role: {formData.designation || 'Member'}
+                      </p>
+                      {formData.bloodGroup && (
+                        <p className="text-[10px] font-semibold text-red-600">
+                          Blood: {formData.bloodGroup}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  // Portrait layout
+                  <div className="flex flex-col items-center flex-1 justify-center space-y-2 py-2">
+                    <div className="w-24 h-28 bg-slate-100 rounded-lg border-2 border-emerald-500 overflow-hidden shrink-0 flex items-center justify-center">
+                      {formData.photoUrl ? (
+                        <img
+                          src={formData.photoUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-10 h-10 text-slate-400" />
+                      )}
+                    </div>
+
+                    <div className="text-center space-y-0.5 w-full px-2">
+                      {formData.nameBangla && (
+                        <p
+                          className="font-bold text-xs text-emerald-800 truncate"
+                          style={{ fontFamily: '"Noto Sans Bengali", sans-serif' }}
+                        >
+                          {formData.nameBangla}
+                        </p>
+                      )}
+                      <p className="font-bold text-xs text-slate-900 truncate">
+                        {formData.fullName || 'FULL NAME HERE'}
+                      </p>
+                      <p className="font-mono text-[11px] font-semibold text-emerald-600">
+                        {formData.idNumber || 'ID-000000'}
+                      </p>
+                      <p className="text-[10px] text-slate-600 truncate">
+                        {formData.department || 'Academic Department'}
+                      </p>
+                      <p className="text-[10px] font-semibold text-red-600">
+                        Blood: {formData.bloodGroup || 'O+'}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Footer bar */}
                 <div className="bg-slate-900 text-slate-400 -m-4 p-1.5 mt-2 text-center text-[9px] font-medium tracking-wider">
-                  AUTHORIZED CREDENTIAL • 300 DPI STANDARD
+                  AUTHORIZED CREDENTIAL • {activeTemplate.department || 'OFFICIAL ID'}
                 </div>
               </div>
             ) : (
               <div className="h-full flex flex-col justify-between p-4 text-xs">
                 <div>
-                  <p className="font-bold text-slate-800 text-center uppercase tracking-wide pb-1 border-b border-slate-200">
-                    TERMS & CONDITIONS
+                  <p
+                    className="font-bold text-slate-800 text-center uppercase tracking-wide pb-1 border-b border-slate-200"
+                    style={{ fontFamily: '"Noto Sans Bengali", sans-serif' }}
+                  >
+                    TERMS & CONDITIONS • নিয়মাবলী
                   </p>
-                  <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">
-                    This card is issued by the organization and remains official property. If found, please return to HQ Security or call {formData.phone || '+1 (800) 555-0199'}.
+                  <p
+                    className="text-[10px] text-slate-600 mt-2 leading-relaxed"
+                    style={{ fontFamily: '"Noto Sans Bengali", sans-serif' }}
+                  >
+                    ১. এই পরিচয়পত্র প্রতিষ্ঠানের নিজস্ব সম্পদ।
+                    <br />
+                    ২. জরুরি যোগাযোগ: {formData.emergencyPhone || formData.phone || '+880 1711-000000'}
                   </p>
                 </div>
 
@@ -900,9 +1161,9 @@ export default function DataEntryPage() {
           </div>
 
           <div className="p-3 bg-slate-800/40 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
-            <p className="font-semibold text-slate-300">Live Feedback Tip</p>
+            <p className="font-semibold text-slate-300">Multi-Department System</p>
             <p>
-              Changes made in any tab immediately update the card layout. Once satisfied, click <strong>Save & Print Card</strong> to generate the 300 DPI PDF immediately.
+              Different departments can have distinct layouts, colors, and orientations. Select the department template at the top left of this form to apply it instantly.
             </p>
           </div>
         </div>

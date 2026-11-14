@@ -15,19 +15,26 @@ export default function PrintPreviewModal({
   onClose,
   records,
   template,
+  templates = [],
   onMarkPrinted,
 }) {
   const [mode, setMode] = useState('a4'); // 'a4' | 'single'
   const [includeBack, setIncludeBack] = useState(true);
   const [mirrorBack, setMirrorBack] = useState(true);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('assigned'); // 'assigned' or specific template ID
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0, percentage: 0, statusText: '' });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  if (!isOpen || !template) return null;
+  if (!isOpen) return null;
 
-  const isLandscape = template.orientation !== 'portrait';
+  const activeTemplate =
+    selectedTemplateId !== 'assigned'
+      ? templates.find((t) => t.id === selectedTemplateId) || template
+      : template;
+
+  const isLandscape = activeTemplate?.orientation !== 'portrait';
   const cardsPerSheet = isLandscape ? 10 : 8;
   const estimatedSheets = Math.ceil(records.length / cardsPerSheet);
 
@@ -38,8 +45,11 @@ export default function PrintPreviewModal({
       setSuccess(false);
 
       const result = await exportCardsPdf({
-        template,
-        records,
+        template: activeTemplate,
+        templates,
+        records: selectedTemplateId === 'assigned'
+          ? records
+          : records.map((r) => ({ ...r, templateId: selectedTemplateId })),
         mode,
         includeBack,
         mirrorBack,
@@ -93,6 +103,29 @@ export default function PrintPreviewModal({
             <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>PDF generated and downloaded successfully! Records marked as printed.</span>
+            </div>
+          )}
+
+          {/* Template Selection */}
+          {templates && templates.length > 1 && (
+            <div className="space-y-1.5 p-3 bg-slate-800/40 rounded-xl border border-slate-800">
+              <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px] block">
+                Card Design Template:
+              </label>
+              <select
+                value={selectedTemplateId}
+                onChange={(e) => setSelectedTemplateId(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:border-indigo-500 text-xs"
+              >
+                <option value="assigned">
+                  ⚡ Use Each Member&apos;s Assigned Department Template (Automatic)
+                </option>
+                {templates.map((tpl) => (
+                  <option key={tpl.id} value={tpl.id}>
+                    Override: Apply &quot;{tpl.name}&quot; ({tpl.department || 'All'} - {tpl.orientation})
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 

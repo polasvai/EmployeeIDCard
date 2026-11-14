@@ -15,6 +15,7 @@ import { compressImageFile } from '../../utils/imageProcessor';
 
 const FONT_FAMILIES = [
   'Inter',
+  'Noto Sans Bengali',
   'Oswald',
   'Playfair Display',
   'Roboto Mono',

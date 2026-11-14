@@ -28,6 +28,16 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function loadStats() {
+      // Load template count
+      let tCount = 3;
+      const storedTemplates = localStorage.getItem('id_studio_templates');
+      if (storedTemplates) {
+        try {
+          const tList = JSON.parse(storedTemplates);
+          if (Array.isArray(tList) && tList.length > 0) tCount = tList.length;
+        } catch (e) {}
+      }
+
       if (isFirebaseConfigured && db && currentUser?.uid) {
         try {
           const recCol = collection(db, 'organizations', currentUser.uid, 'records');
@@ -43,7 +53,7 @@ export default function DashboardPage() {
             totalRecords: snap.size,
             printedRecords: printed,
             pendingRecords: pending,
-            templatesCount: 1,
+            templatesCount: tCount,
           });
         } catch (e) {
           console.warn('Could not load firestore stats:', e);
@@ -59,9 +69,11 @@ export default function DashboardPage() {
               totalRecords: list.length,
               printedRecords: printed,
               pendingRecords: list.length - printed,
-              templatesCount: 1,
+              templatesCount: tCount,
             });
           } catch (e) {}
+        } else {
+          setStats((prev) => ({ ...prev, templatesCount: tCount }));
         }
       }
     }
