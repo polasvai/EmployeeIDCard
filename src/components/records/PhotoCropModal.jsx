@@ -2,8 +2,7 @@ import React, { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import { getCroppedImg } from '../../utils/imageProcessor';
 import { X, ZoomIn, Check, RotateCw } from 'lucide-react';
-import { storage, isFirebaseConfigured } from '../../config/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadPortraitPhoto, getActiveStorageProvider } from '../../services/storageService';
 
 export default function PhotoCropModal({
   isOpen,
@@ -31,7 +30,7 @@ export default function PhotoCropModal({
       setSaving(true);
       setError(null);
 
-      // Crop and compress client-side strictly to 300x300 JPEG under 40 KB
+      // Crop and compress client-side strictly to 300x360 JPEG under 40 KB
       const { blob, dataUrl, sizeKb } = await getCroppedImg(
         imageSrc,
         croppedAreaPixels,
@@ -40,19 +39,15 @@ export default function PhotoCropModal({
         0.85
       );
 
-      let finalPhotoUrl = dataUrl;
+      // Upload to Cloudflare R2 / Firebase Storage / Local Fallback
+      const uploadResult = await uploadPortraitPhoto({
+        blob,
+        dataUrl,
+        recordId: record?.id || `rec-${Date.now()}`,
+        orgId: orgId || 'default-org',
+      });
 
-      // If Firebase Storage is live, upload the blob directly
-      if (isFirebaseConfigured && storage && orgId && record?.id) {
-        const photoRef = ref(storage, `organizations/${orgId}/photos/${record.id}.jpg`);
-        await uploadBytes(photoRef, blob, {
-          contentType: 'image/jpeg',
-          cacheControl: 'public, max-age=31536000',
-        });
-        finalPhotoUrl = await getDownloadURL(photoRef);
-      }
-
-      onPhotoSaved(finalPhotoUrl, sizeKb);
+      onPhotoSaved(uploadResult.url, sizeKb);
       onClose();
     } catch (err) {
       console.error('Failed to crop or upload image:', err);
@@ -70,7 +65,7 @@ export default function PhotoCropModal({
           <div>
             <h3 className="font-semibold text-slate-100 text-sm">Crop & Optimize Portrait</h3>
             <p className="text-xs text-slate-400">
-              For {record?.fullName || 'Record'} • Resized & compressed to &lt; 40 KB
+              For {record?.fullName || 'Record'} • Storage: <span className="text-indigo-400 font-medium">{getActiveStorageProvider()}</span>
             </p>
           </div>
           <button

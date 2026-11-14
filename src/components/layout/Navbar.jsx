@@ -8,7 +8,7 @@ import {
   Building2,
   User,
   Shield,
-  ArrowLeftRight,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -17,7 +17,6 @@ export default function Navbar() {
     organization,
     isFirebaseConfigured,
     isSuperAdmin,
-    switchRole,
     logout,
   } = useAuth();
 
@@ -46,23 +45,22 @@ export default function Navbar() {
 
       {/* Right Actions & Status */}
       <div className="flex items-center space-x-3">
-        {/* Role Toggle Switcher for Testing */}
+        {/* Role Badge (Super Admin vs Org User) */}
         {currentUser && (
-          <button
-            onClick={() => switchRole(isSuperAdmin ? 'user' : 'superadmin')}
-            title="Switch between Regular User and Super Admin to test permissions"
-            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border transition-all ${
+          <div
+            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border ${
               isSuperAdmin
-                ? 'bg-purple-600/20 text-purple-300 border-purple-500/40 hover:bg-purple-600/30'
-                : 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40 hover:bg-indigo-600/30'
+                ? 'bg-purple-600/20 text-purple-300 border-purple-500/40 font-semibold'
+                : 'bg-indigo-600/20 text-indigo-300 border-indigo-500/30 font-medium'
             }`}
           >
-            <Shield className="w-3.5 h-3.5" />
-            <span className="font-semibold">
-              {isSuperAdmin ? 'Role: Super Admin' : 'Role: Org User'}
-            </span>
-            <ArrowLeftRight className="w-3 h-3 text-slate-400 ml-1" />
-          </button>
+            {isSuperAdmin ? (
+              <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+            ) : (
+              <Shield className="w-3.5 h-3.5 text-indigo-400" />
+            )}
+            <span>{isSuperAdmin ? 'Super Administrator' : 'Organization User'}</span>
+          </div>
         )}
 
         {/* Environment Status Badge */}
@@ -78,10 +76,10 @@ export default function Navbar() {
         ) : (
           <div
             className="hidden sm:flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20"
-            title="Running client-side without cloud keys"
+            title="Running in local storage mode"
           >
             <HardDrive className="w-3.5 h-3.5" />
-            <span>Local Demo Mode</span>
+            <span>Local Database</span>
             <span className="w-2 h-2 rounded-full bg-amber-400"></span>
           </div>
         )}
@@ -103,10 +101,10 @@ export default function Navbar() {
               )}
               <div className="hidden md:block text-left">
                 <p className="text-xs font-medium text-slate-200 leading-tight">
-                  {currentUser.displayName || currentUser.email?.split('@')[0] || 'Admin'}
+                  {currentUser.displayName || currentUser.email?.split('@')[0] || 'User'}
                 </p>
-                <p className="text-[11px] text-slate-400 leading-tight">
-                  {currentUser.email || 'Free Tier Owner'}
+                <p className="text-[11px] text-slate-400 leading-tight font-mono">
+                  {currentUser.email}
                 </p>
               </div>
             </div>
