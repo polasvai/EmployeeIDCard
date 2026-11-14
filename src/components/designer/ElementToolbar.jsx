@@ -170,43 +170,132 @@ export default function ElementToolbar({ onAddElement, orientation }) {
           <UserCheck className="w-3.5 h-3.5" />
           <span>Dynamic Field &#9662;</span>
         </button>
-        <div className="absolute left-0 top-full mt-1 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 z-50 hidden group-hover:block">
-          <button
-            onClick={() => handleAddDynamic('fullName', 'FULL NAME')}
-            className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
-          >
-            &#123;&#123;fullName&#125;&#125;
-          </button>
-          <button
-            onClick={() => handleAddDynamic('idNumber', 'EMP-1001', 'ID: ')}
-            className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
-          >
-            &#123;&#123;idNumber&#125;&#125;
-          </button>
-          <button
-            onClick={() => handleAddDynamic('department', 'Department', 'DEPT: ')}
-            className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
-          >
-            &#123;&#123;department&#125;&#125;
-          </button>
-          <button
-            onClick={() => handleAddDynamic('designation', 'Designation / Role')}
-            className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
-          >
-            &#123;&#123;designation&#125;&#125;
-          </button>
-          <button
-            onClick={() => handleAddDynamic('bloodGroup', 'O+', 'BLOOD: ')}
-            className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
-          >
-            &#123;&#123;bloodGroup&#125;&#125;
-          </button>
-          <button
-            onClick={() => handleAddDynamic('validThru', '2027-12-31', 'EXP: ')}
-            className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
-          >
-            &#123;&#123;validThru&#125;&#125;
-          </button>
+        <div className="absolute left-0 top-full mt-1 w-60 max-h-96 overflow-y-auto bg-slate-800 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 hidden group-hover:block divide-y divide-slate-700/60">
+          <div className="py-1">
+            <span className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Identity Fields
+            </span>
+            <button
+              onClick={() => handleAddDynamic('fullName', 'FULL NAME')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;fullName&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('idNumber', 'EMP-1001', 'ID: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;idNumber&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('bloodGroup', 'O+', 'BLOOD: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;bloodGroup&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('gender', 'MALE', 'GEN: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;gender&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('dateOfBirth', '1998-05-12', 'DOB: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;dateOfBirth&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('nationalId', 'NID-98214', 'NID: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;nationalId&#125;&#125;
+            </button>
+          </div>
+
+          <div className="py-1">
+            <span className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Organization / Role
+            </span>
+            <button
+              onClick={() => handleAddDynamic('department', 'Department', 'DEPT: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;department&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('designation', 'Designation / Role')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;designation&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('roleType', 'Full-Time Staff')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;roleType&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('campus', 'Main Campus', 'CAMPUS: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;campus&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('validThru', '2028-12-31', 'EXP: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;validThru&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('joiningDate', '2023-01-15', 'JOINED: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;joiningDate&#125;&#125;
+            </button>
+          </div>
+
+          <div className="py-1">
+            <span className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Contact & Emergency
+            </span>
+            <button
+              onClick={() => handleAddDynamic('phone', '+1 555-0192', 'TEL: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;phone&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('email', 'user@domain.com')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;email&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('emergencyPhone', '+1 555-0999', 'EMERGENCY: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;emergencyPhone&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('emergencyContactName', 'Guardian Name', 'CONTACT: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;emergencyContactName&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('address', 'City, State')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;address&#125;&#125;
+            </button>
+            <button
+              onClick={() => handleAddDynamic('rfid', 'RFID-881920', 'CHIP: ')}
+              className="w-full text-left px-3 py-1.5 hover:bg-slate-700 text-slate-200"
+            >
+              &#123;&#123;rfid&#125;&#125;
+            </button>
+          </div>
         </div>
       </div>
 

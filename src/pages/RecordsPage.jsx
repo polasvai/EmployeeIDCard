@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import RecordTable from '../components/records/RecordTable';
 import BulkImportModal from '../components/records/BulkImportModal';
 import PhotoCropModal from '../components/records/PhotoCropModal';
@@ -36,9 +37,25 @@ const SAMPLE_RECORDS = [
     photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=360&fit=crop&crop=face',
     customFields: {
       department: 'Software Engineering',
-      designation: 'Senior Architect',
+      designation: 'Senior Solutions Architect',
+      roleType: 'Employee',
+      gender: 'Male',
+      dateOfBirth: '1992-04-15',
       bloodGroup: 'O+',
+      nationality: 'American',
+      nationalId: 'NID-94820194',
+      campus: 'Silicon Valley Campus',
+      joiningDate: '2021-03-01',
       validThru: '2028-12-31',
+      reportingManager: 'V. Patel',
+      phone: '+1 (555) 234-5678',
+      email: 'alexander.morgan@company.com',
+      emergencyContactName: 'Mary Morgan',
+      emergencyContactRelation: 'Spouse',
+      emergencyPhone: '+1 (555) 998-1122',
+      address: '742 Evergreen Terrace, Springfield, OR',
+      rfid: '04:A3:2B:9C:1D:6E',
+      status: 'active',
     },
     printStatus: 'pending',
     createdAt: new Date().toISOString(),
@@ -51,8 +68,24 @@ const SAMPLE_RECORDS = [
     customFields: {
       department: 'Biotechnology Research',
       designation: 'Lead Investigator',
+      roleType: 'Faculty',
+      gender: 'Female',
+      dateOfBirth: '1988-11-23',
       bloodGroup: 'A+',
+      nationality: 'Canadian',
+      nationalId: 'CAN-8812903',
+      campus: 'BioTech Tower 3',
+      joiningDate: '2019-08-15',
       validThru: '2028-12-31',
+      reportingManager: 'Dr. E. Thorne',
+      phone: '+1 (555) 345-6789',
+      email: 's.chen@bioresearch.org',
+      emergencyContactName: 'David Chen',
+      emergencyContactRelation: 'Brother',
+      emergencyPhone: '+1 (555) 887-3344',
+      address: '120 Science Pkwy, Boston, MA',
+      rfid: '04:F1:C8:3A:4E:22',
+      status: 'active',
     },
     printStatus: 'printed',
     createdAt: new Date().toISOString(),
@@ -65,8 +98,24 @@ const SAMPLE_RECORDS = [
     customFields: {
       department: 'Global Operations',
       designation: 'Director of Logistics',
+      roleType: 'Employee',
+      gender: 'Male',
+      dateOfBirth: '1985-07-09',
       bloodGroup: 'B+',
+      nationality: 'British',
+      nationalId: 'UK-7729104',
+      campus: 'Logistics Hub North',
+      joiningDate: '2020-01-10',
       validThru: '2027-06-30',
+      reportingManager: 'G. Sterling',
+      phone: '+1 (555) 456-7890',
+      email: 'm.vance@globallogistics.com',
+      emergencyContactName: 'Clara Vance',
+      emergencyContactRelation: 'Spouse',
+      emergencyPhone: '+1 (555) 776-5566',
+      address: '45 Docklands St, Seattle, WA',
+      rfid: '04:77:2D:BE:01:99',
+      status: 'active',
     },
     printStatus: 'pending',
     createdAt: new Date().toISOString(),
@@ -79,8 +128,24 @@ const SAMPLE_RECORDS = [
     customFields: {
       department: 'Financial Advisory',
       designation: 'Chief Risk Officer',
+      roleType: 'Employee',
+      gender: 'Female',
+      dateOfBirth: '1990-09-30',
       bloodGroup: 'AB+',
+      nationality: 'Swedish',
+      nationalId: 'SE-991204',
+      campus: 'Finance Tower Suite 800',
+      joiningDate: '2022-05-15',
       validThru: '2028-12-31',
+      reportingManager: 'C. Henderson',
+      phone: '+1 (555) 567-8901',
+      email: 'e.rostova@advisory.com',
+      emergencyContactName: 'Viktor Rostov',
+      emergencyContactRelation: 'Father',
+      emergencyPhone: '+1 (555) 665-7788',
+      address: '88 Wall Street, New York, NY',
+      rfid: '04:BB:33:AA:88:12',
+      status: 'active',
     },
     printStatus: 'pending',
     createdAt: new Date().toISOString(),
@@ -89,6 +154,7 @@ const SAMPLE_RECORDS = [
 
 export default function RecordsPage() {
   const { currentUser, organization } = useAuth();
+  const navigate = useNavigate();
   const [records, setRecords] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -373,6 +439,15 @@ export default function RecordsPage() {
         </div>
 
         <div className="flex items-center gap-2.5 text-xs">
+          {/* New Member Data Entry Button */}
+          <button
+            onClick={() => navigate('/entry')}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30 transition-all"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>+ Add Member (Data Entry)</span>
+          </button>
+
           {/* Multi-Photo ZIP / Batch file match */}
           <label className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium cursor-pointer transition-colors">
             <Images className="w-4 h-4 text-emerald-400" />
@@ -399,9 +474,9 @@ export default function RecordsPage() {
           <button
             onClick={() => handleOpenPrint(records.map((r) => r.id))}
             disabled={records.length === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition-all disabled:opacity-50"
           >
-            <Printer className="w-4 h-4" />
+            <Printer className="w-4 h-4 text-emerald-400" />
             <span>Print All ({records.length})</span>
           </button>
         </div>
@@ -415,7 +490,8 @@ export default function RecordsPage() {
         onSelectAll={handleSelectAll}
         onDeleteRecords={handleDeleteRecords}
         onOpenCropModal={handleOpenCrop}
-        onOpenAddModal={() => setIsAddOpen(true)}
+        onOpenAddModal={() => navigate('/entry')}
+        onEditRecord={(record) => navigate(`/entry?id=${record.id}`)}
         onOpenPrintModal={handleOpenPrint}
       />
 

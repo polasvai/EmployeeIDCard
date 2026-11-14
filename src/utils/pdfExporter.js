@@ -57,7 +57,10 @@ export async function renderCardSideToCanvas(template, side, record) {
   } else if (background?.type === 'image' && background.value) {
     try {
       const bgImg = await createImage(background.value);
+      ctx.save();
+      ctx.globalAlpha = background.opacity !== undefined ? background.opacity : 1;
       ctx.drawImage(bgImg, 0, 0, width, height);
+      ctx.restore();
     } catch (e) {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);

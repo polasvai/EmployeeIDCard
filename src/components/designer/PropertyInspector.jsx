@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Sliders,
   Type,
@@ -7,7 +7,11 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Upload,
+  Image as ImageIcon,
+  Trash2,
 } from 'lucide-react';
+import { compressImageFile } from '../../utils/imageProcessor';
 
 const FONT_FAMILIES = [
   'Inter',
@@ -25,10 +29,30 @@ export default function PropertyInspector({
   background,
   onUpdateBackground,
 }) {
+  const bgFileInputRef = useRef(null);
+
+  const handleBgImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      // Compress to 300 DPI canvas dimensions under reasonable size
+      const { dataUrl } = await compressImageFile(file, 1011, 1011, 0.9);
+      onUpdateBackground({
+        ...background,
+        type: 'image',
+        value: dataUrl,
+        opacity: background?.opacity !== undefined ? background.opacity : 1,
+      });
+    } catch (err) {
+      console.error('Failed to load background image:', err);
+    }
+  };
+
   if (!selectedElement) {
     // Show card canvas / background properties
     return (
-      <div className="w-80 bg-slate-900 border-l border-slate-800 p-4 space-y-5 text-xs text-slate-300">
+      <div className="w-80 bg-slate-900 border-l border-slate-800 p-4 space-y-5 text-xs text-slate-300 overflow-y-auto">
         <div className="flex items-center gap-2 font-semibold text-slate-200 pb-2 border-b border-slate-800">
           <Palette className="w-4 h-4 text-indigo-400" />
           <span>Card Background</span>
@@ -44,29 +68,52 @@ export default function PropertyInspector({
             >
               <option value="color">Solid Color</option>
               <option value="gradient">Linear Gradient</option>
+              <option value="image">Custom Uploaded Image</option>
             </select>
           </div>
 
-          <div>
-            <label className="block text-[11px] font-medium text-slate-400 mb-1">Primary Color</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={background?.value || '#ffffff'}
-                onChange={(e) => onUpdateBackground({ ...background, value: e.target.value })}
-                className="w-9 h-8 rounded border border-slate-700 cursor-pointer bg-slate-800"
-              />
-              <input
-                type="text"
-                value={background?.value || '#ffffff'}
-                onChange={(e) => onUpdateBackground({ ...background, value: e.target.value })}
-                className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 font-mono text-slate-200"
-              />
+          {/* Solid Color */}
+          {background?.type === 'color' && (
+            <div>
+              <label className="block text-[11px] font-medium text-slate-400 mb-1">Color</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={background?.value || '#ffffff'}
+                  onChange={(e) => onUpdateBackground({ ...background, value: e.target.value })}
+                  className="w-9 h-8 rounded border border-slate-700 cursor-pointer bg-slate-800"
+                />
+                <input
+                  type="text"
+                  value={background?.value || '#ffffff'}
+                  onChange={(e) => onUpdateBackground({ ...background, value: e.target.value })}
+                  className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 font-mono text-slate-200"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
+          {/* Gradient */}
           {background?.type === 'gradient' && (
             <>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-400 mb-1">Primary Color</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={background?.value || '#ffffff'}
+                    onChange={(e) => onUpdateBackground({ ...background, value: e.target.value })}
+                    className="w-9 h-8 rounded border border-slate-700 cursor-pointer bg-slate-800"
+                  />
+                  <input
+                    type="text"
+                    value={background?.value || '#ffffff'}
+                    onChange={(e) => onUpdateBackground({ ...background, value: e.target.value })}
+                    className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 font-mono text-slate-200"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-[11px] font-medium text-slate-400 mb-1">Secondary Color</label>
                 <div className="flex items-center gap-2">
@@ -99,6 +146,78 @@ export default function PropertyInspector({
                 />
               </div>
             </>
+          )}
+
+          {/* Custom Uploaded Background Image */}
+          {background?.type === 'image' && (
+            <div className="space-y-3 pt-1">
+              <input
+                ref={bgFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleBgImageUpload}
+                className="hidden"
+              />
+
+              {background?.value ? (
+                <div className="space-y-2">
+                  <div className="relative rounded-xl border border-slate-700 overflow-hidden h-28 bg-slate-800 flex items-center justify-center">
+                    <img
+                      src={background.value}
+                      alt="Background Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      onClick={() =>
+                        onUpdateBackground({
+                          ...background,
+                          type: 'color',
+                          value: '#ffffff',
+                        })
+                      }
+                      title="Remove background image"
+                      className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-600/80 hover:bg-red-600 text-white shadow-md transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => bgFileInputRef.current?.click()}
+                    className="w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Replace Image</span>
+                  </button>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                      Image Opacity ({Math.round((background.opacity ?? 1) * 100)}%)
+                    </label>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="1"
+                      step="0.05"
+                      value={background.opacity ?? 1}
+                      onChange={(e) =>
+                        onUpdateBackground({ ...background, opacity: parseFloat(e.target.value) })
+                      }
+                      className="w-full accent-indigo-500"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => bgFileInputRef.current?.click()}
+                  className="w-full py-6 rounded-xl border-2 border-dashed border-slate-700 hover:border-indigo-500/50 bg-slate-800/40 hover:bg-slate-800/60 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors"
+                >
+                  <ImageIcon className="w-6 h-6 text-indigo-400" />
+                  <span className="font-medium text-slate-200">Upload Background Graphic</span>
+                  <span className="text-[10px] text-slate-400">PNG, JPG, SVG template art</span>
+                </button>
+              )}
+            </div>
           )}
         </div>
 

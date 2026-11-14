@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import DesignerPage from './pages/DesignerPage';
 import RecordsPage from './pages/RecordsPage';
+import DataEntryPage from './pages/DataEntryPage';
 
 function ProtectedLayout() {
   const { currentUser, loading } = useAuth();
@@ -32,6 +33,7 @@ function ProtectedLayout() {
         <main className="flex-1 overflow-y-auto">
           <Routes>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/entry" element={<DataEntryPage />} />
             <Route path="/designer" element={<DesignerPage />} />
             <Route path="/records" element={<RecordsPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

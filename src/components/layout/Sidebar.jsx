@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Palette,
   Users,
+  UserPlus,
   Printer,
   ShieldCheck,
   FileSpreadsheet,
@@ -15,6 +16,12 @@ const NAV_ITEMS = [
     label: 'Dashboard',
     icon: LayoutDashboard,
     badge: null,
+  },
+  {
+    to: '/entry',
+    label: 'Data Entry',
+    icon: UserPlus,
+    badge: 'New',
   },
   {
     to: '/designer',

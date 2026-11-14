@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   CreditCard,
   ArrowRight,
+  UserPlus,
 } from 'lucide-react';
 import { db, isFirebaseConfigured } from '../config/firebase';
 import { collection, getDocs } from 'firebase/firestore';
@@ -85,19 +86,27 @@ export default function DashboardPage() {
 
           <div className="pt-2 flex flex-wrap items-center gap-3">
             <Link
-              to="/designer"
+              to="/entry"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs shadow-lg shadow-indigo-600/30 transition-all"
             >
-              <Palette className="w-4 h-4" />
-              <span>Open Card Designer</span>
+              <UserPlus className="w-4 h-4" />
+              <span>New Data Entry</span>
               <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+
+            <Link
+              to="/designer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs transition-all"
+            >
+              <Palette className="w-4 h-4 text-indigo-400" />
+              <span>Card Designer</span>
             </Link>
 
             <Link
               to="/records"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs transition-all"
             >
-              <Users className="w-4 h-4 text-indigo-400" />
+              <Users className="w-4 h-4 text-emerald-400" />
               <span>Manage Roster & Print</span>
             </Link>
           </div>

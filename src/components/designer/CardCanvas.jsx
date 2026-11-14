@@ -124,6 +124,38 @@ function CanvasImageElement({ elem, isSelected, onSelect, onChange }) {
   );
 }
 
+// Helper component for background image
+function CanvasBackgroundImage({ background, width, height }) {
+  const [bgImg, setBgImg] = useState(null);
+
+  useEffect(() => {
+    if (background?.type === 'image' && background.value) {
+      const img = new window.Image();
+      img.crossOrigin = 'Anonymous';
+      img.src = background.value;
+      img.onload = () => setBgImg(img);
+    } else {
+      setBgImg(null);
+    }
+  }, [background?.type, background?.value]);
+
+  if (background?.type === 'image' && bgImg) {
+    return (
+      <KonvaImage
+        image={bgImg}
+        x={0}
+        y={0}
+        width={width}
+        height={height}
+        opacity={background.opacity !== undefined ? background.opacity : 1}
+        listening={false}
+      />
+    );
+  }
+
+  return null;
+}
+
 export default function CardCanvas({
   template,
   currentSide,
@@ -226,7 +258,14 @@ export default function CardCanvas({
               y={0}
               width={canvasWidth}
               height={canvasHeight}
-              fill={background?.value || '#ffffff'}
+              fill={background?.type === 'image' ? '#ffffff' : (background?.value || '#ffffff')}
+            />
+
+            {/* Custom Uploaded Background Image */}
+            <CanvasBackgroundImage
+              background={background}
+              width={canvasWidth}
+              height={canvasHeight}
             />
 
             {/* Elements Layer */}

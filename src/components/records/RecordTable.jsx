@@ -8,6 +8,7 @@ import {
   Printer,
   UserPlus,
   User,
+  Pencil,
 } from 'lucide-react';
 
 export default function RecordTable({
@@ -19,6 +20,7 @@ export default function RecordTable({
   onOpenCropModal,
   onOpenAddModal,
   onOpenPrintModal,
+  onEditRecord,
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -246,6 +248,13 @@ export default function RecordTable({
                     {/* Actions */}
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => onEditRecord ? onEditRecord(record) : null}
+                          title="Edit Full Data Record"
+                          className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => onOpenPrintModal([record.id])}
                           title="Print This Card"
