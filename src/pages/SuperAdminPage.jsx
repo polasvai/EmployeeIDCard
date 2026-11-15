@@ -32,113 +32,7 @@ import {
 
 const LOCAL_STORAGE_KEY_RECORDS = 'id_studio_records';
 
-const MOCK_GLOBAL_RECORDS = [
-  {
-    id: 'rec-001',
-    orgId: 'demo-org-owner',
-    orgName: 'Acme Global Academy',
-    templateId: 'tpl-corporate',
-    fullName: 'Alexander R. Morgan',
-    nameBangla: 'আলেকজান্ডার আর. মরগান',
-    idNumber: 'EMP-892041',
-    photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=360&fit=crop&crop=face',
-    customFields: {
-      nameBangla: 'আলেকজান্ডার আর. মরগান',
-      department: 'Software Engineering',
-      designation: 'Senior Solutions Architect',
-      bloodGroup: 'O+',
-      emergencyPhone: '+880 1819-998811',
-      validThru: '2028-12-31',
-      status: 'active',
-    },
-    printStatus: 'sent_to_print',
-    createdAt: '2026-03-01T09:00:00.000Z',
-  },
-  {
-    id: 'rec-002',
-    orgId: 'org-health-01',
-    orgName: 'Central Specialized Hospital',
-    templateId: 'tpl-healthcare',
-    fullName: 'Dr. Sarah Lin Chen',
-    nameBangla: 'ডাঃ সারাহ লিন চেন',
-    idNumber: 'MED-774120',
-    photoUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&h=360&fit=crop&crop=face',
-    customFields: {
-      nameBangla: 'ডাঃ সারাহ লিন চেন',
-      department: 'Biotechnology Research',
-      designation: 'Lead Medical Investigator',
-      bloodGroup: 'A+',
-      emergencyPhone: '+880 1811-887334',
-      validThru: '2028-12-31',
-      status: 'active',
-    },
-    printStatus: 'printing',
-    createdAt: '2026-03-02T11:20:00.000Z',
-  },
-  {
-    id: 'rec-003',
-    orgId: 'org-edu-02',
-    orgName: 'Model College & University',
-    templateId: 'tpl-academic',
-    fullName: 'Prof. Mohammad Rafiqul Islam',
-    nameBangla: 'প্রফেসর মোহাম্মদ রফিকুল ইসলাম',
-    idNumber: 'EDU-449102',
-    photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=360&fit=crop&crop=face',
-    customFields: {
-      nameBangla: 'প্রফেসর মোহাম্মদ রফিকুল ইসলাম',
-      department: 'Physics & Applied Mathematics',
-      designation: 'Dean of Sciences',
-      bloodGroup: 'B+',
-      emergencyPhone: '+880 1912-334455',
-      validThru: '2027-06-30',
-      status: 'active',
-    },
-    printStatus: 'printed',
-    createdAt: '2026-03-03T14:15:00.000Z',
-  },
-  {
-    id: 'rec-004',
-    orgId: 'demo-org-owner',
-    orgName: 'Acme Global Academy',
-    templateId: 'tpl-corporate',
-    fullName: 'Nusrat Jahan',
-    nameBangla: 'নুসরাত জাহান',
-    idNumber: 'EMP-990214',
-    photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&h=360&fit=crop&crop=face',
-    customFields: {
-      nameBangla: 'নুসরাত জাহান',
-      department: 'Finance & Accounts',
-      designation: 'Senior Financial Analyst',
-      bloodGroup: 'AB+',
-      emergencyPhone: '+880 1611-445566',
-      validThru: '2028-12-31',
-      status: 'active',
-    },
-    printStatus: 'delivered',
-    createdAt: '2026-03-04T16:00:00.000Z',
-  },
-  {
-    id: 'rec-005',
-    orgId: 'org-health-01',
-    orgName: 'Central Specialized Hospital',
-    templateId: 'tpl-healthcare',
-    fullName: 'Dr. Tariq Mahmood',
-    nameBangla: 'ডাঃ তারিক মাহমুদ',
-    idNumber: 'MED-889012',
-    photoUrl: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=300&h=360&fit=crop&crop=face',
-    customFields: {
-      nameBangla: 'ডাঃ তারিক মাহমুদ',
-      department: 'Cardiology Department',
-      designation: 'Consultant Cardiologist',
-      bloodGroup: 'O+',
-      emergencyPhone: '+880 1715-778899',
-      validThru: '2028-12-31',
-      status: 'active',
-    },
-    printStatus: 'sent_to_print',
-    createdAt: '2026-03-05T10:00:00.000Z',
-  },
-];
+const MOCK_GLOBAL_RECORDS = [];
 
 export default function SuperAdminPage() {
   const { currentUser, isSuperAdmin, allOrganizations, toggleDesignerForOrg } = useAuth();
@@ -157,26 +51,48 @@ export default function SuperAdminPage() {
 
   // Load records
   useEffect(() => {
-    const saved = localStorage.getItem(LOCAL_STORAGE_KEY_RECORDS);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Merge with mock global records to ensure rich data across multiple organizations
-        const merged = [...parsed];
-        MOCK_GLOBAL_RECORDS.forEach((mock) => {
-          if (!merged.some((r) => r.id === mock.id)) {
-            merged.push(mock);
+    async function loadAllRecords() {
+      if (isFirebaseConfigured && db) {
+        try {
+          const orgsCol = collection(db, 'organizations');
+          const orgsSnap = await getDocs(orgsCol);
+          let allRecs = [];
+          for (const orgDoc of orgsSnap.docs) {
+            const orgData = orgDoc.data();
+            const recsCol = collection(db, 'organizations', orgDoc.id, 'records');
+            const recsSnap = await getDocs(recsCol);
+            recsSnap.docs.forEach((d) => {
+              allRecs.push({
+                id: d.id,
+                orgId: orgDoc.id,
+                orgName: orgData.name || 'Organization',
+                ...d.data(),
+              });
+            });
           }
-        });
-        setRecords(merged);
-      } catch (e) {
-        setRecords(MOCK_GLOBAL_RECORDS);
+          setRecords(allRecs);
+          localStorage.setItem(LOCAL_STORAGE_KEY_RECORDS, JSON.stringify(allRecs));
+          return;
+        } catch (e) {
+          console.warn('Firestore loadAllRecords error:', e);
+        }
       }
-    } else {
-      setRecords(MOCK_GLOBAL_RECORDS);
-      localStorage.setItem(LOCAL_STORAGE_KEY_RECORDS, JSON.stringify(MOCK_GLOBAL_RECORDS));
+
+      // Local storage fallback
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY_RECORDS);
+      if (saved) {
+        try {
+          setRecords(JSON.parse(saved));
+        } catch (e) {
+          setRecords([]);
+        }
+      } else {
+        setRecords([]);
+      }
     }
-  }, []);
+
+    loadAllRecords();
+  }, [currentUser]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
