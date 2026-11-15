@@ -2,7 +2,8 @@
  * Cloudflare Worker for ID Card Studio
  * Handles:
  * 1. Cloudflare R2 Image Upload (POST /upload) & Serve (GET /photos/*)
- * 2. Static Assets (React frontend from /dist) with SPA Fallback
+ * 2. Cloudflare R2 Image Deletion (POST /delete or DELETE /photos/*)
+ * 3. Static Assets (React frontend from /dist) with SPA Fallback
  */
 
 export default {
@@ -12,7 +13,7 @@ export default {
     // Enable CORS for frontend requests
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, X-Upload-Secret',
     };
 
@@ -70,7 +71,44 @@ export default {
       }
     }
 
-    // 2. Serve R2 Photos: GET /photos/...
+    // 2. Delete Photo Route: POST /delete or DELETE /photos/*
+    if (
+      (request.method === 'POST' && url.pathname === '/delete') ||
+      (request.method === 'DELETE' && url.pathname.startsWith('/photos/'))
+    ) {
+      try {
+        let key = '';
+        if (request.method === 'DELETE') {
+          key = url.pathname.slice(1);
+        } else {
+          const body = await request.json().catch(() => ({}));
+          key = body.key || body.photoUrl || '';
+        }
+
+        if (key.includes('/photos/')) {
+          key = 'photos/' + key.split('/photos/')[1];
+        }
+
+        if (key && env.MY_BUCKET) {
+          await env.MY_BUCKET.delete(key);
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, deletedKey: key }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      } catch (err) {
+        return new Response(JSON.stringify({ error: err.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // 3. Serve R2 Photos: GET /photos/...
     if (request.method === 'GET' && url.pathname.startsWith('/photos/')) {
       const key = url.pathname.slice(1);
       const object = await env.MY_BUCKET.get(key);
@@ -87,7 +125,7 @@ export default {
       return new Response(object.body, { headers });
     }
 
-    // 3. Static Assets: Serve React Frontend from /dist
+    // 4. Static Assets: Serve React Frontend from /dist
     if (env.ASSETS) {
       let response = await env.ASSETS.fetch(request);
       // SPA Fallback: if 404 and is a navigation route (no file extension), return index.html

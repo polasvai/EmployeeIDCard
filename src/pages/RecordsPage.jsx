@@ -26,6 +26,7 @@ import {
   X,
 } from 'lucide-react';
 import { compressImageFile } from '../utils/imageProcessor';
+import { deletePortraitPhoto } from '../services/storageService';
 
 const LOCAL_STORAGE_KEY_RECORDS = 'id_studio_records';
 
@@ -279,6 +280,17 @@ export default function RecordsPage() {
   const handleDeleteRecords = async (idsToDelete) => {
     if (!window.confirm(`Are you sure you want to delete ${idsToDelete.length} record(s)?`)) return;
 
+    // 1. Delete associated portrait photos from Cloudflare R2 / Storage
+    const recordsToDelete = records.filter((r) => idsToDelete.includes(r.id));
+    recordsToDelete.forEach((rec) => {
+      if (rec.photoUrl) {
+        deletePortraitPhoto(rec.photoUrl).catch((err) => {
+          console.warn('Could not delete photo from R2:', err);
+        });
+      }
+    });
+
+    // 2. Delete database documents from Firestore
     if (isFirebaseConfigured && db && currentUser?.uid) {
       try {
         const batch = writeBatch(db);
@@ -292,10 +304,11 @@ export default function RecordsPage() {
       }
     }
 
+    // 3. Update local state
     const updated = records.filter((r) => !idsToDelete.includes(r.id));
     saveRecordsState(updated);
     setSelectedIds((prev) => prev.filter((id) => !idsToDelete.includes(id)));
-    showToast(`Deleted ${idsToDelete.length} record(s).`);
+    showToast(`Deleted ${idsToDelete.length} record(s) and cleaned up R2 storage.`);
   };
 
   const handleOpenCrop = (record) => {

@@ -7,7 +7,7 @@
  */
 
 import { storage, isFirebaseConfigured } from '../config/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 const CF_WORKER_UPLOAD_URL = import.meta.env.VITE_CLOUDFLARE_WORKER_UPLOAD_URL;
 const CF_R2_PUBLIC_URL = import.meta.env.VITE_CLOUDFLARE_R2_PUBLIC_URL;
@@ -102,4 +102,52 @@ export async function uploadPortraitPhoto({ blob, dataUrl, recordId = 'temp', or
     url: dataUrl,
     provider: 'Local Storage',
   };
+}
+
+/**
+ * Delete a portrait photo from Cloudflare R2 or Firebase Storage
+ * @param {string} photoUrl - Full URL of the photo to delete
+ * @returns {Promise<boolean>}
+ */
+export async function deletePortraitPhoto(photoUrl) {
+  if (!photoUrl || typeof photoUrl !== 'string') return false;
+
+  // Skip base64 / data: urls (they are only in localStorage/database)
+  if (photoUrl.startsWith('data:')) return true;
+
+  // 1. Cloudflare R2 Storage Deletion
+  if (isCloudflareStorageConfigured && photoUrl.includes('/photos/')) {
+    try {
+      const deleteEndpoint = CF_WORKER_UPLOAD_URL
+        ? CF_WORKER_UPLOAD_URL.replace(/\/upload\/?$/, '/delete')
+        : '/delete';
+
+      const headers = { 'Content-Type': 'application/json' };
+      if (CF_UPLOAD_SECRET) {
+        headers['X-Upload-Secret'] = CF_UPLOAD_SECRET;
+      }
+
+      await fetch(deleteEndpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ photoUrl }),
+      });
+      return true;
+    } catch (err) {
+      console.warn('Cloudflare R2 photo deletion warning:', err);
+    }
+  }
+
+  // 2. Google Firebase Storage Deletion
+  if (isFirebaseConfigured && storage && photoUrl.includes('firebasestorage.app')) {
+    try {
+      const storageRef = ref(storage, photoUrl);
+      await deleteObject(storageRef);
+      return true;
+    } catch (err) {
+      console.warn('Firebase Storage photo deletion warning:', err);
+    }
+  }
+
+  return true;
 }
