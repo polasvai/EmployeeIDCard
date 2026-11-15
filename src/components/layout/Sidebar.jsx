@@ -12,6 +12,7 @@ import {
   Shield,
   Lock,
 } from 'lucide-react';
+import { APP_VERSION } from '../../config/version';
 
 export default function Sidebar() {
   const { isSuperAdmin, organization } = useAuth();
@@ -151,8 +152,8 @@ export default function Sidebar() {
           <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-400" />
           <span>Vector PDF Imposition</span>
         </div>
-        <span className="text-emerald-400 font-mono font-semibold" title="Production Cloud Release: Firebase + Cloudflare R2">
-          v2.0.0
+        <span className="text-emerald-400 font-mono font-semibold" title={`Production Cloud Release: v${APP_VERSION}`}>
+          v{APP_VERSION}
         </span>
       </div>
     </aside>

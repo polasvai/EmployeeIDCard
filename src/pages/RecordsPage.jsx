@@ -153,13 +153,15 @@ export default function RecordsPage() {
       }
     });
 
-    // 2. Delete database documents from Firestore
+    // 2. Delete database documents from Firestore (and public_cards)
     if (isFirebaseConfigured && db && currentUser?.uid) {
       try {
         const batch = writeBatch(db);
         idsToDelete.forEach((id) => {
           const docRef = doc(db, 'organizations', currentUser.uid, 'records', id);
           batch.delete(docRef);
+          const publicDocRef = doc(db, 'public_cards', id);
+          batch.delete(publicDocRef);
         });
         await batch.commit();
       } catch (err) {

@@ -198,12 +198,21 @@ export async function renderCardSideToCanvas(template, side, record) {
       }
 
       case 'qrCode': {
-        const payload = String(
+        let payload = String(
           record[elem.fieldKey] ??
           (record.customFields && record.customFields[elem.fieldKey]) ??
           record.idNumber ??
+          record.id ??
           'ID-SAMPLE'
         );
+        // If not already a full URL, point to the online verification portal
+        if (!payload.startsWith('http://') && !payload.startsWith('https://')) {
+          const cardId = record.idNumber || record.id || payload;
+          const origin = typeof window !== 'undefined' && window.location?.origin
+            ? window.location.origin
+            : 'https://employee.idcard.bd';
+          payload = `${origin}/verify/${encodeURIComponent(cardId)}`;
+        }
         try {
           const qrDataUrl = await generateQrCodeDataUrl(payload, {
             width: elemW,

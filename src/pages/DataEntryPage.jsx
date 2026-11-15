@@ -242,6 +242,29 @@ export default function DataEntryPage() {
           ...recordToSave,
           updatedAt: serverTimestamp(),
         });
+
+        // Mirror public verification summary for instant QR code verification
+        try {
+          const publicDocRef = doc(db, 'public_cards', recordId);
+          await setDoc(publicDocRef, {
+            id: recordId,
+            idNumber: recordToSave.idNumber || recordId,
+            fullName: recordToSave.fullName || '',
+            nameBangla: recordToSave.nameBangla || '',
+            photoUrl: recordToSave.photoUrl || '',
+            designation: recordToSave.designation || '',
+            department: recordToSave.department || '',
+            joiningDate: recordToSave.joiningDate || '',
+            validThru: recordToSave.validThru || '',
+            bloodGroup: recordToSave.bloodGroup || '',
+            status: recordToSave.status || 'active',
+            orgId: currentUser.uid,
+            organizationName: currentUser.tenantName || currentUser.displayName || 'ID Card Studio Client',
+            updatedAt: serverTimestamp(),
+          });
+        } catch (pubErr) {
+          console.warn('Could not mirror to public_cards:', pubErr);
+        }
       } catch (err) {
         console.error('Firestore save failed:', err);
       }
@@ -780,9 +803,31 @@ export default function DataEntryPage() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-medium mb-1">
-                  Card Expiry / Valid Until / Session
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-slate-300 font-medium">
+                    Card Expiry / Valid Until / Session
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-slate-500 mr-1">Validity:</span>
+                    {[1, 2, 3, 5].map((yrs) => (
+                      <button
+                        key={yrs}
+                        type="button"
+                        onClick={() => {
+                          const base = formData.joiningDate ? new Date(formData.joiningDate) : new Date();
+                          const exp = new Date(base);
+                          exp.setFullYear(exp.getFullYear() + yrs);
+                          exp.setDate(exp.getDate() - 1);
+                          handleInputChange('validThru', exp.toISOString().split('T')[0]);
+                        }}
+                        className="px-1.5 py-0.5 text-[10px] rounded bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white transition-colors border border-slate-700"
+                        title={`Set validity to ${yrs} year(s) from joining date`}
+                      >
+                        +{yrs}Y
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <input
                   type="date"
                   value={formData.validThru}

@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Navbar from './components/layout/Navbar';
 import Sidebar from './components/layout/Sidebar';
 import LoginPage from './pages/LoginPage';
+import LandingPage from './pages/LandingPage';
+import VerificationPage from './pages/VerificationPage';
 import DashboardPage from './pages/DashboardPage';
 import DesignerPage from './pages/DesignerPage';
 import RecordsPage from './pages/RecordsPage';
@@ -54,6 +56,9 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/verify" element={<VerificationPage />} />
+          <Route path="/verify/:id" element={<VerificationPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/*" element={<ProtectedLayout />} />
         </Routes>

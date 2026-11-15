@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth, SUPERADMIN_EMAIL } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   CreditCard,
   Mail,
@@ -10,6 +10,7 @@ import {
   AlertCircle,
   LogIn,
   UserPlus,
+  ArrowLeft,
 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -73,6 +74,22 @@ export default function LoginPage() {
       <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl relative z-10 space-y-6">
+        {/* Navigation back */}
+        <div className="flex justify-between items-center text-xs">
+          <Link
+            to="/"
+            className="text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
+          </Link>
+          <Link
+            to="/verify"
+            className="text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
+          >
+            Verify a Card
+          </Link>
+        </div>
+
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-400 mx-auto flex items-center justify-center shadow-lg shadow-indigo-500/25">

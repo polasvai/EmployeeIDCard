@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   CreditCard,
@@ -9,6 +10,8 @@ import {
   User,
   Shield,
   ShieldCheck,
+  ExternalLink,
+  Globe,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -83,6 +86,19 @@ export default function Navbar() {
             <span className="w-2 h-2 rounded-full bg-amber-400"></span>
           </div>
         )}
+
+        {/* View Public Site */}
+        <Link
+          to="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Open Landing Page (employee.idcard.bd)"
+          className="hidden md:flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors"
+        >
+          <Globe className="w-3.5 h-3.5 text-indigo-400" />
+          <span>Public Portal</span>
+          <ExternalLink className="w-3 h-3 text-slate-400" />
+        </Link>
 
         {/* User Info & Logout */}
         {currentUser && (

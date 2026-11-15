@@ -20,5 +20,11 @@ service cloud.firestore {
         allow read, write: if isSuperAdmin() || (request.auth != null && request.auth.uid == orgId);
       }
     }
+
+    // Public Cards for instant tamper-proof QR verification (public read)
+    match /public_cards/{cardId} {
+      allow read: if true;
+      allow write, delete: if request.auth != null;
+    }
   }
 }
