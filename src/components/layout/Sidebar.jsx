@@ -151,7 +151,9 @@ export default function Sidebar() {
           <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-400" />
           <span>Vector PDF Imposition</span>
         </div>
-        <span className="text-emerald-400 font-mono">v1.2.0</span>
+        <span className="text-emerald-400 font-mono font-semibold" title="Production Cloud Release: Firebase + Cloudflare R2">
+          v2.0.0
+        </span>
       </div>
     </aside>
   );
