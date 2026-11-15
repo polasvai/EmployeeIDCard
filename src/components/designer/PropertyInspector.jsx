@@ -13,16 +13,30 @@ import {
 } from 'lucide-react';
 import { compressImageFile } from '../../utils/imageProcessor';
 
-const FONT_FAMILIES = [
-  'Inter',
-  'Noto Sans Bengali',
-  'Oswald',
-  'Playfair Display',
-  'Roboto Mono',
-  'Arial',
-  'Georgia',
-  'Courier New',
+const FONT_GROUPS = [
+  {
+    label: 'Corporate & Modern Sans',
+    fonts: ['Inter', 'Montserrat', 'Poppins', 'Outfit', 'Roboto', 'Open Sans', 'Raleway', 'Space Grotesk', 'Arial'],
+  },
+  {
+    label: 'Bengali Typography (বাংলা)',
+    fonts: ['Noto Sans Bengali', 'Hind Siliguri', 'Tiro Bangla', 'Anek Bangla', 'Mina', 'Galada'],
+  },
+  {
+    label: 'Impact & Badges',
+    fonts: ['Oswald', 'Bebas Neue'],
+  },
+  {
+    label: 'Executive & Serif',
+    fonts: ['Playfair Display', 'Cinzel', 'Georgia'],
+  },
+  {
+    label: 'Monospace & Tech',
+    fonts: ['Roboto Mono', 'Fira Code', 'Space Mono', 'Courier New'],
+  },
 ];
+
+const FONT_FAMILIES = FONT_GROUPS.flatMap((g) => g.fonts);
 
 export default function PropertyInspector({
   selectedElement,
@@ -366,10 +380,14 @@ export default function PropertyInspector({
                 onChange={(e) => handleChange('fontFamily', e.target.value)}
                 className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-200"
               >
-                {FONT_FAMILIES.map((f) => (
-                  <option key={f} value={f}>
-                    {f}
-                  </option>
+                {FONT_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label} className="bg-slate-900 text-slate-300 font-semibold">
+                    {group.fonts.map((f) => (
+                      <option key={f} value={f} style={{ fontFamily: `"${f}", sans-serif` }}>
+                        {f}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>

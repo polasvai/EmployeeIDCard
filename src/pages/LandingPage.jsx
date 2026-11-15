@@ -53,8 +53,9 @@ export default function LandingPage() {
     tierName = 'Medium Business (৳60/card)';
   }
 
-  const verificationRate = includeVerification ? 5 : 0;
-  const effectivePerCard = baseRate + verificationRate;
+  // QR Verification is ৳5 per year per card (e.g. 3 years validity = 3 * 5 = ৳15 / card)
+  const verificationCostPerCard = includeVerification ? (5 * selectedValidityYears) : 0;
+  const effectivePerCard = baseRate + verificationCostPerCard;
   const totalCost = count * effectivePerCard;
   const savings = count > 50 ? count * (70 - baseRate) : 0;
 
@@ -178,7 +179,7 @@ export default function LandingPage() {
           <div className="text-center max-w-4xl mx-auto space-y-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold backdrop-blur-md">
               <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Full Custom Department Branding &bull; Zero Egress Cloudflare R2</span>
+              <span>Full Custom Department Branding &bull; Smart QR Verification</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-[1.12]">
@@ -213,7 +214,7 @@ export default function LandingPage() {
             </div>
 
             {/* Key Trust Badges */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-10 text-left">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-10 text-left">
               <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
                 <Palette className="w-5 h-5 text-indigo-400 mb-2" />
                 <h4 className="text-xs font-bold text-white">Custom Dept Designs</h4>
@@ -222,17 +223,12 @@ export default function LandingPage() {
               <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
                 <QrCode className="w-5 h-5 text-emerald-400 mb-2" />
                 <h4 className="text-xs font-bold text-white">Smart QR Verification</h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">+৳5 for 1-5 Year validity tracking</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">৳5 / Year per card for live validity</p>
               </div>
               <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
                 <Printer className="w-5 h-5 text-sky-400 mb-2" />
                 <h4 className="text-xs font-bold text-white">300 DPI Vector PDF</h4>
                 <p className="text-[11px] text-slate-400 mt-0.5">Automated A4/A3 imposition layouts</p>
-              </div>
-              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
-                <ShieldCheck className="w-5 h-5 text-purple-400 mb-2" />
-                <h4 className="text-xs font-bold text-white">Cloudflare R2 Engine</h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">High-speed zero-egress photo security</p>
               </div>
             </div>
           </div>
@@ -306,7 +302,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-center gap-2.5 text-slate-400">
                   <PlusCircleIcon className="w-4 h-4 text-indigo-400 shrink-0" />
-                  <span>Online QR Verification Add-on: <strong>+৳5/card</strong></span>
+                  <span>Online QR Verification Add-on: <strong>+৳5/year per card</strong></span>
                 </li>
               </ul>
             </div>
@@ -373,11 +369,11 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-center gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Free Courier Delivery inside Dhaka City</span>
+                  <span>Prompt Courier Delivery inside Dhaka City</span>
                 </li>
                 <li className="flex items-center gap-2.5 text-indigo-300">
                   <PlusCircleIcon className="w-4 h-4 text-indigo-400 shrink-0" />
-                  <span>Online QR Verification Add-on: <strong>+৳5/card</strong></span>
+                  <span>Online QR Verification Add-on: <strong>+৳5/year per card</strong></span>
                 </li>
               </ul>
             </div>
@@ -444,7 +440,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-center gap-2.5 text-slate-400">
                   <PlusCircleIcon className="w-4 h-4 text-indigo-400 shrink-0" />
-                  <span>Online QR Verification Add-on: <strong>+৳5/card</strong></span>
+                  <span>Online QR Verification Add-on: <strong>+৳5/year per card</strong></span>
                 </li>
               </ul>
             </div>
@@ -468,7 +464,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-8 space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30">
-                <QrCode className="w-4 h-4" /> Smart Online Verification Service &bull; +৳5 per Card
+                <QrCode className="w-4 h-4" /> Smart Online Verification Service &bull; ৳5 / Year per Card
               </div>
 
               <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
@@ -476,7 +472,7 @@ export default function LandingPage() {
               </h3>
 
               <p className="text-sm text-slate-300 leading-relaxed">
-                Add an online verification QR code to each card for just <strong>৳5 per card</strong>.
+                Add an online verification QR code to each card for just <strong>৳5 per year per card</strong> (e.g. ৳15 for 3 years validity).
                 When any smartphone camera scans the physical card, it opens our official verification portal at{' '}
                 <span className="text-emerald-400 font-mono font-semibold">employee.idcard.bd/verify</span>.
               </p>
@@ -589,12 +585,12 @@ export default function LandingPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-white">Include Online QR Verification</span>
-                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 font-bold">
-                        +৳5 / Card
+                      <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
+                        ৳5 / Year per Card
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      QR code printed on card; live expiration & validity check on scan.
+                      Printed QR code on card; live validity check on scan ({selectedValidityYears} Years = ৳{5 * selectedValidityYears} / card).
                     </p>
                   </div>
                 </label>
@@ -614,7 +610,7 @@ export default function LandingPage() {
                               : 'bg-slate-800 text-slate-400 hover:text-white'
                           }`}
                         >
-                          {yr} {yr === 1 ? 'Year' : 'Years'}
+                          {yr} {yr === 1 ? 'Year' : 'Years'} (৳{yr * 5})
                         </button>
                       ))}
                     </div>
@@ -646,8 +642,8 @@ export default function LandingPage() {
                   </div>
                   {includeVerification && (
                     <div className="flex justify-between text-emerald-400">
-                      <span>Online Verification (+{selectedValidityYears}Y):</span>
-                      <span className="font-mono">{count} &times; ৳5 = ৳{count * 5}</span>
+                      <span>Online Verification ({selectedValidityYears} Yrs @ ৳5/yr):</span>
+                      <span className="font-mono">{count} &times; ৳{5 * selectedValidityYears} = ৳{(count * 5 * selectedValidityYears).toLocaleString('en-US')}</span>
                     </div>
                   )}
                   {savings > 0 && (
@@ -665,7 +661,7 @@ export default function LandingPage() {
                     <span className="text-xs text-slate-400 font-medium">BDT</span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    (Effective: ৳{effectivePerCard} / card including all features)
+                    (Effective: ৳{effectivePerCard} / card {includeVerification ? `with ${selectedValidityYears}-year live verification` : ''})
                   </p>
                 </div>
               </div>
@@ -873,6 +869,12 @@ export default function LandingPage() {
                 <span className="text-slate-400">Price per Card:</span>
                 <span className="font-bold text-emerald-400">৳{effectivePerCard}</span>
               </div>
+              {includeVerification && (
+                <div className="flex justify-between text-[11px] text-emerald-400">
+                  <span>Verification ({selectedValidityYears} Years @ ৳5/yr):</span>
+                  <span>+৳{5 * selectedValidityYears} / card</span>
+                </div>
+              )}
               <div className="flex justify-between border-t border-slate-800 pt-1.5 mt-1">
                 <span className="font-semibold text-white">Estimated Total:</span>
                 <span className="font-bold text-white text-sm">৳{totalCost.toLocaleString('en-US')} BDT</span>
@@ -940,7 +942,7 @@ export default function LandingPage() {
             </div>
             <div>
               <span className="font-bold text-white text-sm">employee.idcard.bd</span>
-              <p className="text-[11px] text-slate-500">ID Card Studio &bull; Cloudflare R2 &bull; Firebase Edition</p>
+              <p className="text-[11px] text-slate-500">ID Card Studio &bull; Enterprise Cloud Identity Platform</p>
             </div>
           </div>
 
