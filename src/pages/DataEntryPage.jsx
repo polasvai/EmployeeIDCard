@@ -20,6 +20,7 @@ import {
   MapPin,
   FileText,
   Building2,
+  UserPlus,
 } from 'lucide-react';
 import PhotoCropModal from '../components/records/PhotoCropModal';
 import PrintPreviewModal from '../components/print/PrintPreviewModal';
@@ -77,9 +78,7 @@ export default function DataEntryPage() {
   );
 
   useEffect(() => {
-    if (searchParams.get('tab') === 'company') {
-      setActiveTab('company');
-    }
+    setActiveTab(searchParams.get('tab') === 'company' ? 'company' : 'cards');
   }, [searchParams]);
 
   const [formData, setFormData] = useState(INITIAL_FORM);
