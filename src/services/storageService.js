@@ -9,12 +9,57 @@
 import { storage, isFirebaseConfigured } from '../config/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
-const CF_WORKER_UPLOAD_URL = import.meta.env.VITE_CLOUDFLARE_WORKER_UPLOAD_URL;
-const CF_R2_PUBLIC_URL = import.meta.env.VITE_CLOUDFLARE_R2_PUBLIC_URL;
-const CF_UPLOAD_SECRET = import.meta.env.VITE_CLOUDFLARE_UPLOAD_SECRET || '';
+// Support both standard env names, truncated Cloudflare UI variable names, and same-origin worker fallback
+const getWorkerUploadUrl = () => {
+  const envUrl =
+    import.meta.env.VITE_CLOUDFLARE_WORKER_UPLOAD_URL ||
+    import.meta.env.VITE_CLOUDFLARE_WORKE ||
+    import.meta.env.VITE_CLOUDFLARE_WORKER_URL;
+
+  if (envUrl && !envUrl.includes('placeholder') && !envUrl.includes('your-worker')) {
+    return envUrl;
+  }
+
+  // Automatic origin fallback when hosted on Cloudflare Worker / Custom Domain
+  if (typeof window !== 'undefined' && window.location) {
+    const host = window.location.hostname;
+    if (host.includes('idcard') || host.includes('workers.dev')) {
+      return `${window.location.origin}/upload`;
+    }
+  }
+
+  return 'https://employeeidcard.srpolas-bd.workers.dev/upload';
+};
+
+const getR2PublicUrl = () => {
+  const envUrl =
+    import.meta.env.VITE_CLOUDFLARE_R2_PUBLIC_URL ||
+    import.meta.env.VITE_CLOUDFLARE_R2_PUB ||
+    import.meta.env.VITE_CLOUDFLARE_PUBLIC_URL;
+
+  if (envUrl && !envUrl.includes('placeholder') && !envUrl.includes('your-account')) {
+    return envUrl;
+  }
+
+  if (typeof window !== 'undefined' && window.location) {
+    const host = window.location.hostname;
+    if (host.includes('idcard') || host.includes('workers.dev')) {
+      return window.location.origin;
+    }
+  }
+
+  return 'https://employeeidcard.srpolas-bd.workers.dev';
+};
+
+const CF_WORKER_UPLOAD_URL = getWorkerUploadUrl();
+const CF_R2_PUBLIC_URL = getR2PublicUrl();
+const CF_UPLOAD_SECRET =
+  import.meta.env.VITE_CLOUDFLARE_UPLOAD_SECRET ||
+  import.meta.env.VITE_CLOUDFLARE_UPLOAD_S ||
+  '';
 
 /**
- * Checks if Cloudflare R2 storage is configured via environment variables
+ * Checks if Cloudflare R2 storage is configured
  */
 export const isCloudflareStorageConfigured = Boolean(
   CF_WORKER_UPLOAD_URL &&

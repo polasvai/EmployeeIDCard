@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   LayoutDashboard,
@@ -11,11 +11,17 @@ import {
   FileSpreadsheet,
   Shield,
   Lock,
+  Building2,
 } from 'lucide-react';
 import { APP_VERSION } from '../../config/version';
 
 export default function Sidebar() {
-  const { isSuperAdmin, organization } = useAuth();
+  const { isSuperAdmin, organization, allOrganizations, allUsers } = useAuth();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const currentAdminTab = searchParams.get('tab') || 'queue';
+  const isCompanyTabActive = location.pathname === '/entry' && searchParams.get('tab') === 'company';
+  const isEntryCardsActive = location.pathname === '/entry' && searchParams.get('tab') !== 'company';
 
   const isDesignerLocked = !isSuperAdmin && organization?.designerEnabled === false;
 
@@ -25,12 +31,22 @@ export default function Sidebar() {
       label: 'Dashboard',
       icon: LayoutDashboard,
       badge: null,
+      isActive: location.pathname === '/dashboard',
     },
     {
       to: '/entry',
       label: 'Data Entry',
       icon: UserPlus,
-      badge: 'New',
+      badge: 'Cards',
+      isActive: isEntryCardsActive,
+    },
+    {
+      to: '/entry?tab=company',
+      label: 'Company Info',
+      icon: Building2,
+      badge: 'Profile',
+      badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/20',
+      isActive: isCompanyTabActive,
     },
     {
       to: '/designer',
@@ -40,12 +56,14 @@ export default function Sidebar() {
       badgeClass: isDesignerLocked
         ? 'bg-amber-500/20 text-amber-300 border-amber-400/20'
         : 'bg-indigo-500/20 text-indigo-300 border-indigo-400/20',
+      isActive: location.pathname === '/designer',
     },
     {
       to: '/records',
       label: 'Records & Roster',
       icon: Users,
       badge: null,
+      isActive: location.pathname === '/records',
     },
   ];
 
@@ -64,9 +82,9 @@ export default function Sidebar() {
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  className={({ isActive }) =>
+                  className={() =>
                     `flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
-                      isActive
+                      item.isActive
                         ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                     }`
@@ -93,29 +111,72 @@ export default function Sidebar() {
 
         {/* Super Admin Control Section */}
         {isSuperAdmin && (
-          <div>
+          <div className="space-y-1">
             <p className="px-3 text-[11px] font-semibold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Shield className="w-3.5 h-3.5" />
               Super Administration
             </p>
-            <NavLink
-              to="/admin"
-              className={({ isActive }) =>
-                `flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
-                  isActive
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                    : 'text-purple-300 hover:text-white hover:bg-purple-600/10 border border-purple-500/20'
-                }`
-              }
-            >
-              <div className="flex items-center gap-3">
-                <Printer className="w-4 h-4 shrink-0 text-purple-400" />
-                <span>Super Admin Panel</span>
-              </div>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-500/30 text-purple-200 border border-purple-400/30">
-                MASTER
-              </span>
-            </NavLink>
+            <nav className="space-y-1">
+              <NavLink
+                to="/admin?tab=queue"
+                className={() => {
+                  const active = location.pathname === '/admin' && currentAdminTab === 'queue';
+                  return `flex items-center justify-between px-3 py-2 rounded-xl font-medium text-xs transition-all ${
+                    active
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+                      : 'text-purple-300 hover:text-white hover:bg-purple-600/10'
+                  }`;
+                }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Printer className="w-4 h-4 shrink-0 text-purple-400" />
+                  <span>Print Queue</span>
+                </div>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-200 border border-purple-400/30">
+                  MASTER
+                </span>
+              </NavLink>
+
+              <NavLink
+                to="/admin?tab=organizations"
+                className={() => {
+                  const active = location.pathname === '/admin' && currentAdminTab === 'organizations';
+                  return `flex items-center justify-between px-3 py-2 rounded-xl font-medium text-xs transition-all ${
+                    active
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+                      : 'text-purple-300 hover:text-white hover:bg-purple-600/10'
+                  }`;
+                }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Building2 className="w-4 h-4 shrink-0 text-purple-400" />
+                  <span>Organizations</span>
+                </div>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-500/30 text-purple-200">
+                  {allOrganizations?.length || 0}
+                </span>
+              </NavLink>
+
+              <NavLink
+                to="/admin?tab=users"
+                className={() => {
+                  const active = location.pathname === '/admin' && currentAdminTab === 'users';
+                  return `flex items-center justify-between px-3 py-2 rounded-xl font-medium text-xs transition-all ${
+                    active
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+                      : 'text-purple-300 hover:text-white hover:bg-purple-600/10'
+                  }`;
+                }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Users className="w-4 h-4 shrink-0 text-purple-400" />
+                  <span>Users</span>
+                </div>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-500/30 text-purple-200">
+                  {allUsers?.length || 0}
+                </span>
+              </NavLink>
+            </nav>
           </div>
         )}
 

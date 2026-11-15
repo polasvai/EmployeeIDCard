@@ -4,12 +4,28 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey:
+    import.meta.env.VITE_FIREBASE_API_KEY ||
+    'AIzaSyDApHtICsjvQA0o2_gvkbgEGnXExtOzAB4',
+  authDomain:
+    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
+    import.meta.env.VITE_FIREBASE_AUTH_DOM ||
+    'idcard-cloudflare.firebaseapp.com',
+  projectId:
+    import.meta.env.VITE_FIREBASE_PROJECT_ID ||
+    import.meta.env.VITE_FIREBASE_PROJECT_I ||
+    'idcard-cloudflare',
+  storageBucket:
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
+    import.meta.env.VITE_FIREBASE_STORAGE_E ||
+    'idcard-cloudflare.firebasestorage.app',
+  messagingSenderId:
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ||
+    import.meta.env.VITE_FIREBASE_MESSAGIN ||
+    '429369392917',
+  appId:
+    import.meta.env.VITE_FIREBASE_APP_ID ||
+    '1:429369392917:web:151e8d7cd0a50aa2a8f31c',
 };
 
 // Check if credentials are placeholders or actually configured

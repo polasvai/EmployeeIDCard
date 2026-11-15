@@ -84,11 +84,12 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [organization, setOrganization] = useState(null);
   const [allOrganizations, setAllOrganizations] = useState(INITIAL_MOCK_ORGS);
+  const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // First-time Startup Seeding
   useEffect(() => {
-    // 1. Seed Super Admin in user registry if first time
+    // 1. Seed Super Admin & Default Demo Users in registry if first time
     const rawRegistry = localStorage.getItem(LOCAL_STORAGE_KEY_USERS_REGISTRY);
     let registry = [];
     if (rawRegistry) {
@@ -99,22 +100,57 @@ export function AuthProvider({ children }) {
       }
     }
 
-    const hasSuperAdmin = registry.some(
-      (u) => u.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase()
-    );
-
-    if (!hasSuperAdmin) {
-      const superAdminSeed = {
+    const DEFAULT_SEED_USERS = [
+      {
         uid: 'superadmin-master',
         email: SUPERADMIN_EMAIL,
         password: SUPERADMIN_PASSWORD,
         displayName: 'Polas (Super Admin)',
         role: 'superadmin',
-        createdAt: new Date().toISOString(),
-      };
-      registry.unshift(superAdminSeed);
-      localStorage.setItem(LOCAL_STORAGE_KEY_USERS_REGISTRY, JSON.stringify(registry));
-    }
+        orgId: 'superadmin-hq',
+        orgName: 'Super Admin Production HQ',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        uid: 'demo-org-owner',
+        email: 'admin@acmeacademy.edu.bd',
+        password: 'Password123*',
+        displayName: 'Acme Admin',
+        role: 'user',
+        orgId: 'demo-org-owner',
+        orgName: 'Acme Global Academy',
+        createdAt: '2026-01-15T08:00:00.000Z',
+      },
+      {
+        uid: 'user-health-01',
+        email: 'admin@centralhospital.org',
+        password: 'Password123*',
+        displayName: 'Dr. Rafiqul Islam (Hospital HR)',
+        role: 'user',
+        orgId: 'org-health-01',
+        orgName: 'Central Specialized Hospital',
+        createdAt: '2026-02-10T10:30:00.000Z',
+      },
+      {
+        uid: 'user-edu-02',
+        email: 'registrar@modelcollege.edu.bd',
+        password: 'Password123*',
+        displayName: 'Registrar Office',
+        role: 'user',
+        orgId: 'org-edu-02',
+        orgName: 'Model College & University',
+        createdAt: '2026-03-01T12:00:00.000Z',
+      },
+    ];
+
+    DEFAULT_SEED_USERS.forEach((seed) => {
+      if (!registry.some((u) => u.email.toLowerCase() === seed.email.toLowerCase())) {
+        registry.push(seed);
+      }
+    });
+
+    setAllUsers(registry);
+    localStorage.setItem(LOCAL_STORAGE_KEY_USERS_REGISTRY, JSON.stringify(registry));
 
     // 2. Seed default organizations if not present
     const savedOrgs = localStorage.getItem(LOCAL_STORAGE_KEY_ALL_ORGS);
@@ -390,6 +426,7 @@ export function AuthProvider({ children }) {
       };
 
       registry.push(newUser);
+      setAllUsers(registry);
       localStorage.setItem(LOCAL_STORAGE_KEY_USERS_REGISTRY, JSON.stringify(registry));
 
       const newOrg = {
@@ -449,20 +486,35 @@ export function AuthProvider({ children }) {
   };
 
   /**
-   * Update organization profile
+   * Update organization profile / company branding info
    */
   const updateOrganizationProfile = async (updates) => {
     if (!currentUser || !organization) return;
     const updated = { ...organization, ...updates };
     setOrganization(updated);
 
+    // Update in allOrganizations list
+    const orgId = organization.id || currentUser.uid;
+    const updatedAll = allOrganizations.map((o) => (o.id === orgId ? { ...o, ...updates } : o));
+    setAllOrganizations(updatedAll);
+    localStorage.setItem(LOCAL_STORAGE_KEY_ALL_ORGS, JSON.stringify(updatedAll));
+
     if (isFirebaseConfigured && db) {
-      const orgRef = doc(db, 'organizations', currentUser.uid);
-      await setDoc(orgRef, updates, { merge: true });
+      try {
+        const orgRef = doc(db, 'organizations', currentUser.uid);
+        await setDoc(orgRef, updates, { merge: true });
+        const settingsRef = doc(db, 'organizations', currentUser.uid, 'settings', 'companyInfo');
+        await setDoc(settingsRef, updates, { merge: true });
+      } catch (e) {
+        console.warn('Firestore org update failed:', e);
+      }
     } else {
       localStorage.setItem(LOCAL_STORAGE_KEY_ORG, JSON.stringify(updated));
     }
+    return updated;
   };
+
+  const updateCompanyInfo = updateOrganizationProfile;
 
   /**
    * Super Admin: Toggle Card Designer access for an organization
@@ -500,6 +552,7 @@ export function AuthProvider({ children }) {
     currentUser,
     organization,
     allOrganizations,
+    allUsers,
     isSuperAdmin,
     isFirebaseConfigured,
     loading,
@@ -508,6 +561,7 @@ export function AuthProvider({ children }) {
     loginWithGoogle,
     logout,
     updateOrganizationProfile,
+    updateCompanyInfo,
     toggleDesignerForOrg,
   };
 

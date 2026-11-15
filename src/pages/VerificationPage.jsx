@@ -406,7 +406,7 @@ export default function VerificationPage() {
               <div className="pt-2 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-2">
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>Cloudflare Edge Authenticated &bull; Zero Egress Storage</span>
+                  <span>Cloudflare Edge Authenticated &bull; Secure Enterprise Storage</span>
                 </div>
                 <span>Queried: {new Date().toLocaleDateString('en-GB')} {new Date().toLocaleTimeString('en-GB')}</span>
               </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useSearchParams } from 'react-router-dom';
 import PrintPreviewModal from '../components/print/PrintPreviewModal';
 import { DEFAULT_TEMPLATES } from '../constants/printSpecs';
 import { db, isFirebaseConfigured } from '../config/firebase';
@@ -13,8 +13,10 @@ import {
 import {
   ShieldCheck,
   Building2,
+  Building,
   Printer,
   Users,
+  User,
   Search,
   CheckCircle,
   Clock,
@@ -28,6 +30,14 @@ import {
   Layers,
   ChevronDown,
   Sparkles,
+  Eye,
+  X,
+  Globe,
+  Mail,
+  Phone,
+  MapPin,
+  BadgeCheck,
+  PenTool,
 } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY_RECORDS = 'id_studio_records';
@@ -35,15 +45,20 @@ const LOCAL_STORAGE_KEY_RECORDS = 'id_studio_records';
 const MOCK_GLOBAL_RECORDS = [];
 
 export default function SuperAdminPage() {
-  const { currentUser, isSuperAdmin, allOrganizations, toggleDesignerForOrg } = useAuth();
-  const [activeTab, setActiveTab] = useState('queue'); // 'queue' | 'organizations'
+  const { currentUser, isSuperAdmin, allOrganizations, allUsers, toggleDesignerForOrg } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'queue'; // 'queue' | 'organizations' | 'users'
+  const setActiveTab = (tab) => setSearchParams({ tab });
+
   const [records, setRecords] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [orgFilter, setOrgFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [orgSearchTerm, setOrgSearchTerm] = useState('');
+  const [userSearchTerm, setUserSearchTerm] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
+  const [selectedOrgModal, setSelectedOrgModal] = useState(null);
 
   // Print Modal State
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
@@ -183,9 +198,23 @@ export default function SuperAdminPage() {
 
   // Filter organizations
   const filteredOrgs = (allOrganizations || []).filter((org) => {
+    const term = orgSearchTerm.toLowerCase();
     return (
-      org.name.toLowerCase().includes(orgSearchTerm.toLowerCase()) ||
-      org.ownerEmail.toLowerCase().includes(orgSearchTerm.toLowerCase())
+      org.name?.toLowerCase().includes(term) ||
+      org.nameBangla?.includes(orgSearchTerm) ||
+      org.ownerEmail?.toLowerCase().includes(term) ||
+      org.address?.toLowerCase().includes(term)
+    );
+  });
+
+  // Filter users
+  const filteredUsers = (allUsers || []).filter((user) => {
+    const term = userSearchTerm.toLowerCase();
+    return (
+      user.email?.toLowerCase().includes(term) ||
+      user.displayName?.toLowerCase().includes(term) ||
+      user.orgName?.toLowerCase().includes(term) ||
+      user.role?.toLowerCase().includes(term)
     );
   });
 
@@ -345,7 +374,7 @@ export default function SuperAdminPage() {
           onClick={() => setActiveTab('queue')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
             activeTab === 'queue'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
               : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
           }`}
         >
@@ -357,12 +386,24 @@ export default function SuperAdminPage() {
           onClick={() => setActiveTab('organizations')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
             activeTab === 'organizations'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
               : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
           }`}
         >
           <Building2 className="w-4 h-4" />
-          <span>Organizations & Designer Access ({allOrganizations.length})</span>
+          <span>Organizations ({allOrganizations?.length || 0})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+            activeTab === 'users'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+              : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>Users Directory ({allUsers?.length || 0})</span>
         </button>
       </div>
 
@@ -674,128 +715,515 @@ export default function SuperAdminPage() {
         </div>
       )}
 
-      {/* TAB 2: ORGANIZATIONS & DESIGNER PERMISSION CONTROLS */}
+      {/* TAB 2: ORGANIZATIONS DIRECTORY WITH REAL-TIME CARD STATUS METRICS */}
       {activeTab === 'organizations' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl flex flex-col">
           {/* Header Bar */}
-          <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="relative flex-1 min-w-[240px]">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <div className="p-5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs bg-slate-900/80">
+            <div className="relative flex-1 min-w-[260px]">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search organizations by institution name or email..."
+                placeholder="Search organizations by English/Bangla name, email, or address..."
                 value={orgSearchTerm}
                 onChange={(e) => setOrgSearchTerm(e.target.value)}
-                className="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 text-xs"
+                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl pl-10 pr-3.5 py-2.5 text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-purple-500 text-xs"
               />
             </div>
 
-            <div className="text-slate-400 text-xs">
-              Showing <strong>{filteredOrgs.length}</strong> registered tenant organizations
+            <div className="text-slate-400 text-xs flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>
+                Total <strong>{filteredOrgs.length}</strong> Registered Client Organizations
+              </span>
             </div>
           </div>
 
-          {/* Table */}
+          {/* Organizations Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-800/60 text-slate-400 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-800">
+              <thead className="bg-slate-800/70 text-slate-400 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-800">
                 <tr>
-                  <th className="p-3">Organization Name</th>
-                  <th className="p-3">Owner / Contact Email</th>
-                  <th className="p-3">Records Count</th>
-                  <th className="p-3">Registered Date</th>
-                  <th className="p-3">Card Designer Permission</th>
-                  <th className="p-3 text-right">Designer Access Toggle</th>
+                  <th className="p-3.5">Organization & Brand</th>
+                  <th className="p-3.5">Admin & Contact</th>
+                  <th className="p-3.5 text-center">Employee Count</th>
+                  <th className="p-3.5">ID Card Print Status</th>
+                  <th className="p-3.5">Card Designer</th>
+                  <th className="p-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/80 text-slate-200">
-                {filteredOrgs.map((org) => {
-                  const isEnabled = org.designerEnabled !== false;
+                {filteredOrgs.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-slate-400">
+                      No organizations found matching "{orgSearchTerm}".
+                    </td>
+                  </tr>
+                ) : (
+                  filteredOrgs.map((org) => {
+                    const isEnabled = org.designerEnabled !== false;
 
-                  return (
-                    <tr key={org.id} className="hover:bg-slate-800/40 transition-colors">
-                      {/* Name */}
-                      <td className="p-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                            <Building2 className="w-4 h-4" />
+                    // Calculate live card metrics for this organization
+                    const orgCards = records.filter((r) => r.orgId === org.id);
+                    const orgPending = orgCards.filter((r) => !r.printStatus || r.printStatus === 'pending').length;
+                    const orgSent = orgCards.filter((r) => r.printStatus === 'sent_to_print').length;
+                    const orgPrinting = orgCards.filter((r) => r.printStatus === 'printing').length;
+                    const orgPrinted = orgCards.filter((r) => r.printStatus === 'printed').length;
+                    const orgDelivered = orgCards.filter((r) => r.printStatus === 'delivered').length;
+                    const employeeCount = orgCards.length || org.recordsCount || 0;
+
+                    return (
+                      <tr key={org.id} className="hover:bg-slate-800/40 transition-colors">
+                        {/* Name & Logo */}
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center p-1.5 shrink-0 overflow-hidden shadow">
+                              {org.logoUrl ? (
+                                <img
+                                  src={org.logoUrl}
+                                  alt={org.name}
+                                  className="max-w-full max-h-full object-contain"
+                                />
+                              ) : (
+                                <Building2 className="w-6 h-6 text-indigo-400" />
+                              )}
+                            </div>
+                            <div className="space-y-0.5">
+                              <p className="font-bold text-white text-sm">{org.name}</p>
+                              {org.nameBangla && (
+                                <p
+                                  className="text-xs text-slate-300 font-medium"
+                                  style={{ fontFamily: '"Noto Sans Bengali", sans-serif' }}
+                                >
+                                  {org.nameBangla}
+                                </p>
+                              )}
+                              <p className="text-[10px] text-slate-500 font-mono">
+                                ID: {org.id}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold text-slate-100">{org.name}</p>
-                            <p className="text-[10px] text-slate-500 font-mono">ID: {org.id}</p>
+                        </td>
+
+                        {/* Admin & Contact */}
+                        <td className="p-3.5 text-slate-300">
+                          <div className="space-y-0.5">
+                            <p className="font-mono text-xs text-slate-200">{org.ownerEmail || '—'}</p>
+                            {org.address && (
+                              <p className="text-[11px] text-slate-400 flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
+                                <span className="truncate max-w-[200px]">{org.address}</span>
+                              </p>
+                            )}
+                            {org.phone && (
+                              <p className="text-[10px] text-slate-400 font-mono">
+                                Tel: {org.phone}
+                              </p>
+                            )}
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Email */}
-                      <td className="p-3 text-slate-300 font-mono">
-                        {org.ownerEmail || '—'}
-                      </td>
+                        {/* Employee / Records Count */}
+                        <td className="p-3.5 text-center">
+                          <div className="inline-flex flex-col items-center justify-center px-3 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700">
+                            <span className="text-base font-extrabold text-white font-mono">
+                              {employeeCount}
+                            </span>
+                            <span className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">
+                              Employees
+                            </span>
+                          </div>
+                        </td>
 
-                      {/* Records Count */}
-                      <td className="p-3 text-slate-300">
-                        <span className="font-semibold text-indigo-300">
-                          {org.recordsCount ?? 0}
-                        </span>{' '}
-                        cards
-                      </td>
+                        {/* ID Card Status Breakdown */}
+                        <td className="p-3.5">
+                          <div className="flex flex-wrap items-center gap-1.5 max-w-[280px]">
+                            <span
+                              title="Draft / Pending submission"
+                              className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700"
+                            >
+                              Pending: <strong>{orgPending}</strong>
+                            </span>
 
-                      {/* Created */}
-                      <td className="p-3 text-slate-400">
-                        {org.createdAt
-                          ? new Date(org.createdAt).toLocaleDateString()
-                          : 'Recent'}
-                      </td>
+                            {orgSent > 0 && (
+                              <span
+                                title="Sent to Print Queue"
+                                className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                              >
+                                Queue: <strong>{orgSent}</strong>
+                              </span>
+                            )}
 
-                      {/* Designer Permission Status Badge */}
-                      <td className="p-3">
-                        {isEnabled ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-medium">
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            Designer Enabled
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[11px] font-medium">
-                            <AlertCircle className="w-3.5 h-3.5" />
-                            Designer Disabled
-                          </span>
-                        )}
-                      </td>
+                            {orgPrinting > 0 && (
+                              <span
+                                title="Currently Printing"
+                                className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                              >
+                                Printing: <strong>{orgPrinting}</strong>
+                              </span>
+                            )}
 
-                      {/* Action Toggle Switch */}
-                      <td className="p-3 text-right">
-                        <button
-                          onClick={() => {
-                            const newStatus = !isEnabled;
-                            toggleDesignerForOrg(org.id, newStatus);
-                            showToast(
-                              `Card Designer has been ${newStatus ? 'ENABLED' : 'DISABLED'} for ${org.name}.`
-                            );
-                          }}
-                          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
-                            isEnabled
-                              ? 'bg-red-500/10 text-red-300 border-red-500/30 hover:bg-red-500/20'
-                              : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20'
-                          }`}
-                        >
-                          {isEnabled ? (
-                            <>
-                              <ToggleRight className="w-4 h-4 text-emerald-400" />
-                              <span>Disable Designer</span>
-                            </>
-                          ) : (
-                            <>
-                              <ToggleLeft className="w-4 h-4 text-slate-500" />
-                              <span>Enable Designer</span>
-                            </>
-                          )}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                            <span
+                              title="Printed & Laminated"
+                              className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                            >
+                              Printed: <strong>{orgPrinted}</strong>
+                            </span>
+
+                            <span
+                              title="Dispatched & Delivered"
+                              className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                            >
+                              Delivered: <strong>{orgDelivered}</strong>
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Card Designer Permission */}
+                        <td className="p-3.5">
+                          <button
+                            onClick={() => {
+                              const newStatus = !isEnabled;
+                              toggleDesignerForOrg(org.id, newStatus);
+                              showToast(
+                                `Card Designer has been ${newStatus ? 'ENABLED' : 'DISABLED'} for ${org.name}.`
+                              );
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border text-[11px] font-semibold transition-all ${
+                              isEnabled
+                                ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20'
+                                : 'bg-rose-500/10 text-rose-300 border-rose-500/30 hover:bg-rose-500/20'
+                            }`}
+                          >
+                            {isEnabled ? (
+                              <>
+                                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Enabled</span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                                <span>Disabled</span>
+                              </>
+                            )}
+                          </button>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="p-3.5 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setSelectedOrgModal(org)}
+                              title="View full organization profile & assets"
+                              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors"
+                            >
+                              <Eye className="w-4 h-4 text-indigo-400" />
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setOrgFilter(org.id);
+                                setActiveTab('queue');
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 hover:text-white border border-purple-500/30 font-semibold text-xs transition-colors flex items-center gap-1.5"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              <span>View Cards</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: USERS DIRECTORY (USER-WISE ID CARD STATUS) */}
+      {activeTab === 'users' && (
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl flex flex-col">
+          {/* Header Bar */}
+          <div className="p-5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs bg-slate-900/80">
+            <div className="relative flex-1 min-w-[260px]">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search registered users by name, email, role, or organization..."
+                value={userSearchTerm}
+                onChange={(e) => setUserSearchTerm(e.target.value)}
+                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl pl-10 pr-3.5 py-2.5 text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-purple-500 text-xs"
+              />
+            </div>
+
+            <div className="text-slate-400 text-xs flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+              <span>
+                Total <strong>{filteredUsers.length}</strong> Registered User Accounts
+              </span>
+            </div>
+          </div>
+
+          {/* Users Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-800/70 text-slate-400 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-800">
+                <tr>
+                  <th className="p-3.5">User Profile</th>
+                  <th className="p-3.5">Role Authority</th>
+                  <th className="p-3.5">Assigned Organization</th>
+                  <th className="p-3.5 text-center">Cards Managed</th>
+                  <th className="p-3.5">Card Status (User Wise)</th>
+                  <th className="p-3.5">Joined Date</th>
+                  <th className="p-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80 text-slate-200">
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-slate-400">
+                      No user accounts found matching "{userSearchTerm}".
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map((user) => {
+                    const isSuper = user.role === 'superadmin' || user.email?.toLowerCase().includes('superadmin');
+
+                    // Calculate user-wise card metrics
+                    const userCards = records.filter(
+                      (r) =>
+                        r.createdBy === user.email ||
+                        r.orgId === user.orgId ||
+                        r.orgId === user.uid
+                    );
+                    const uPending = userCards.filter((r) => !r.printStatus || r.printStatus === 'pending').length;
+                    const uPrinted = userCards.filter((r) => r.printStatus === 'printed').length;
+                    const uDelivered = userCards.filter((r) => r.printStatus === 'delivered').length;
+
+                    // Match organization name
+                    const userOrg = allOrganizations?.find(
+                      (o) => o.id === user.orgId || o.ownerEmail === user.email
+                    );
+                    const orgDisplayName = userOrg?.name || user.orgName || (isSuper ? 'Master Command HQ' : 'Tenant Client');
+
+                    return (
+                      <tr key={user.uid || user.email} className="hover:bg-slate-800/40 transition-colors">
+                        {/* User Profile */}
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border shadow ${
+                                isSuper
+                                  ? 'bg-purple-600/20 text-purple-300 border-purple-500/40'
+                                  : 'bg-indigo-600/20 text-indigo-300 border-indigo-500/30'
+                              }`}
+                            >
+                              {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-bold text-white text-sm">
+                                {user.displayName || user.email.split('@')[0]}
+                              </p>
+                              <p className="text-xs text-slate-400 font-mono">{user.email}</p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Role Badge */}
+                        <td className="p-3.5">
+                          {isSuper ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[11px] font-bold">
+                              <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+                              Super Admin
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 text-[11px] font-medium">
+                              <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+                              Organization User
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Organization */}
+                        <td className="p-3.5">
+                          <div className="space-y-0.5">
+                            <p className="font-semibold text-slate-200 text-xs">{orgDisplayName}</p>
+                            <p className="text-[10px] text-slate-500 font-mono">
+                              Org ID: {user.orgId || user.uid}
+                            </p>
+                          </div>
+                        </td>
+
+                        {/* Cards Managed */}
+                        <td className="p-3.5 text-center">
+                          <span className="text-base font-extrabold text-white font-mono">
+                            {userCards.length}
+                          </span>
+                        </td>
+
+                        {/* User-Wise Card Status */}
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-2">
+                            <span
+                              title="Pending Cards"
+                              className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700"
+                            >
+                              Pending: <strong>{uPending}</strong>
+                            </span>
+                            <span
+                              title="Printed Cards"
+                              className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                            >
+                              Printed: <strong>{uPrinted}</strong>
+                            </span>
+                            <span
+                              title="Delivered Cards"
+                              className="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                            >
+                              Delivered: <strong>{uDelivered}</strong>
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Joined Date */}
+                        <td className="p-3.5 text-slate-400 font-mono text-[11px]">
+                          {user.createdAt
+                            ? new Date(user.createdAt).toLocaleDateString('en-GB', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })
+                            : 'Active'}
+                        </td>
+
+                        {/* Action */}
+                        <td className="p-3.5 text-right">
+                          <button
+                            onClick={() => {
+                              if (user.orgId) setOrgFilter(user.orgId);
+                              setActiveTab('queue');
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition-colors"
+                          >
+                            Filter Queue
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ORGANIZATION DETAILS INSPECTION MODAL */}
+      {selectedOrgModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative">
+            <div className="flex justify-between items-start border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center p-2 shrink-0">
+                  {selectedOrgModal.logoUrl ? (
+                    <img
+                      src={selectedOrgModal.logoUrl}
+                      alt={selectedOrgModal.name}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  ) : (
+                    <Building2 className="w-7 h-7 text-indigo-400" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">{selectedOrgModal.name}</h3>
+                  {selectedOrgModal.nameBangla && (
+                    <p
+                      className="text-base text-slate-300 font-medium font-serif"
+                      style={{ fontFamily: '"Noto Sans Bengali", sans-serif' }}
+                    >
+                      {selectedOrgModal.nameBangla}
+                    </p>
+                  )}
+                  <p className="text-[11px] text-slate-500 font-mono">
+                    ID: {selectedOrgModal.id}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedOrgModal(null)}
+                className="text-slate-400 hover:text-white p-1 text-2xl font-light"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+                <span className="text-[11px] text-slate-500 uppercase font-semibold">Contact Email</span>
+                <p className="font-mono text-slate-200">{selectedOrgModal.ownerEmail || '—'}</p>
+              </div>
+
+              <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+                <span className="text-[11px] text-slate-500 uppercase font-semibold">Hotline / Phone</span>
+                <p className="font-mono text-slate-200">{selectedOrgModal.phone || '—'}</p>
+              </div>
+
+              <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1 sm:col-span-2">
+                <span className="text-[11px] text-slate-500 uppercase font-semibold">Official Address</span>
+                <p className="text-slate-200">{selectedOrgModal.address || '—'}</p>
+                {selectedOrgModal.addressBangla && (
+                  <p
+                    className="text-slate-300 pt-0.5"
+                    style={{ fontFamily: '"Noto Sans Bengali", sans-serif' }}
+                  >
+                    {selectedOrgModal.addressBangla}
+                  </p>
+                )}
+              </div>
+
+              {selectedOrgModal.signatoryName && (
+                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1 sm:col-span-2">
+                  <span className="text-[11px] text-slate-500 uppercase font-semibold">Authorized Signatory</span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">{selectedOrgModal.signatoryName}</p>
+                      <p className="text-slate-400">{selectedOrgModal.signatoryTitle || 'Signatory'}</p>
+                    </div>
+                    {selectedOrgModal.signatorySignatureUrl && (
+                      <img
+                        src={selectedOrgModal.signatorySignatureUrl}
+                        alt="Signature"
+                        className="h-8 object-contain filter invert opacity-90"
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setOrgFilter(selectedOrgModal.id);
+                  setSelectedOrgModal(null);
+                  setActiveTab('queue');
+                }}
+                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs transition-colors flex items-center gap-1.5"
+              >
+                <Printer className="w-4 h-4" />
+                <span>View Print Jobs in Queue</span>
+              </button>
+              <button
+                onClick={() => setSelectedOrgModal(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -19,9 +19,11 @@ import {
   Users,
   MapPin,
   FileText,
+  Building2,
 } from 'lucide-react';
 import PhotoCropModal from '../components/records/PhotoCropModal';
 import PrintPreviewModal from '../components/print/PrintPreviewModal';
+import CompanyInfoForm from '../components/records/CompanyInfoForm';
 import { DEFAULT_TEMPLATES, DEFAULT_TEMPLATE } from '../constants/printSpecs';
 import { db, isFirebaseConfigured } from '../config/firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
@@ -67,8 +69,18 @@ const INITIAL_FORM = {
 export default function DataEntryPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const editId = searchParams.get('id');
+
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get('tab') === 'company' ? 'company' : 'cards'
+  );
+
+  useEffect(() => {
+    if (searchParams.get('tab') === 'company') {
+      setActiveTab('company');
+    }
+  }, [searchParams]);
 
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [templates, setTemplates] = useState(DEFAULT_TEMPLATES);
@@ -356,47 +368,96 @@ export default function DataEntryPage() {
           </button>
           <div>
             <h2 className="text-2xl font-bold text-slate-100">
-              {editId ? 'Edit ID Card Record' : 'Member Data Entry'}
+              {activeTab === 'company'
+                ? 'Company & Institution Profile'
+                : editId
+                ? 'Edit ID Card Record'
+                : 'Member Data Entry'}
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Single-page view: All personal, Bangla bio, family, organizational, and emergency details in one view
+              {activeTab === 'company'
+                ? 'Manage English & Bangla company name, logo, address, and authorized signature'
+                : 'Single-page view: All personal, Bangla bio, family, organizational, and emergency details'}
             </p>
           </div>
         </div>
 
-        {/* Action Buttons Top */}
-        <div className="flex items-center gap-2 text-xs">
-          <button
-            onClick={handleSaveAndNew}
-            disabled={loading}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition-colors"
-          >
-            <PlusCircle className="w-4 h-4 text-indigo-400" />
-            <span>Save & Add Another</span>
-          </button>
+        {/* Action Buttons Top (only for Card Entry) */}
+        {activeTab === 'cards' && (
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              onClick={handleSaveAndNew}
+              disabled={loading}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition-colors"
+            >
+              <PlusCircle className="w-4 h-4 text-indigo-400" />
+              <span>Save & Add Another</span>
+            </button>
 
-          <button
-            onClick={handleSaveAndPrint}
-            disabled={loading}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-lg shadow-emerald-600/30 transition-colors"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Save & Print Card</span>
-          </button>
+            <button
+              onClick={handleSaveAndPrint}
+              disabled={loading}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-lg shadow-emerald-600/30 transition-colors"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Save & Print Card</span>
+            </button>
 
-          <button
-            onClick={handleSaveAndView}
-            disabled={loading}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            <span>{loading ? 'Saving...' : 'Save & View Roster'}</span>
-          </button>
-        </div>
+            <button
+              onClick={handleSaveAndView}
+              disabled={loading}
+              className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
+            >
+              <Save className="w-4 h-4" />
+              <span>{loading ? 'Saving...' : 'Save & View Roster'}</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Main Grid: Form Sections (Left 7 Cols) & Sticky Live Card Preview (Right 5 Cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* Mode Navigation Switcher */}
+      <div className="flex items-center gap-3 border-b border-slate-800 pb-3">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('cards');
+            setSearchParams({});
+          }}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+            activeTab === 'cards'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+          }`}
+        >
+          <UserPlus className="w-4 h-4" />
+          <span>Cardholder Data Entry</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('company');
+            setSearchParams({ tab: 'company' });
+          }}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+            activeTab === 'company'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+          }`}
+        >
+          <Building2 className="w-4 h-4 text-emerald-400" />
+          <span>Company Info & Assets</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            Logo & Address
+          </span>
+        </button>
+      </div>
+
+      {activeTab === 'company' ? (
+        <CompanyInfoForm onSaved={() => showToast('Company profile saved successfully!')} />
+      ) : (
+        /* Main Grid: Form Sections (Left 7 Cols) & Sticky Live Card Preview (Right 5 Cols) */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Form: All Sections in One Single Continuous View (7 Cols) */}
         <div className="lg:col-span-7 space-y-6">
           {/* SECTION 0: DEPARTMENT TEMPLATE SELECTOR */}
@@ -1225,6 +1286,7 @@ export default function DataEntryPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Photo Cropping Modal */}
       {isCropOpen && cropImageSrc && (
