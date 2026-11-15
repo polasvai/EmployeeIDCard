@@ -521,7 +521,7 @@ export default function DataEntryPage() {
               <div className="flex-1 space-y-1.5">
                 <p className="font-semibold text-slate-200 text-sm">Portrait Photo</p>
                 <p className="text-[11px] text-slate-400">
-                  Standard 300×300px portrait compressed under 40 KB for free-tier storage.
+                  Standard 300×300px portrait compressed under 40 KB for optimal print quality.
                 </p>
                 <div className="flex items-center gap-2 pt-1">
                   <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 font-medium cursor-pointer transition-colors">

@@ -9,7 +9,6 @@ import {
   Printer,
   FileSpreadsheet,
   Zap,
-  ShieldCheck,
   CreditCard,
   ArrowRight,
   UserPlus,
@@ -180,48 +179,6 @@ export default function DashboardPage() {
           <div>
             <p className="text-3xl font-bold text-slate-100">{stats.templatesCount}</p>
             <p className="text-[11px] text-slate-500 mt-1">CR80 Double-Sided</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Free Tier Compliance & Guardrails Status */}
-      <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-4">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-emerald-400" />
-          <h3 className="font-semibold text-slate-100 text-sm">
-            Strict $0/mo Free-Tier Architecture Verification
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-800 space-y-1.5">
-            <div className="flex items-center gap-2 text-indigo-400 font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>Client-Side Processing</span>
-            </div>
-            <p className="text-slate-400 leading-relaxed text-[11px]">
-              No paid Firebase Cloud Functions. Image compression, QR/barcode generation, and PDF imposition run entirely in the user&apos;s browser.
-            </p>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-800 space-y-1.5">
-            <div className="flex items-center gap-2 text-indigo-400 font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>300 DPI CR80 Standard</span>
-            </div>
-            <p className="text-slate-400 leading-relaxed text-[11px]">
-              Coordinates locked to 1011 × 638 px for landscape or 638 × 1011 px for portrait. Compatible with direct thermal card printers (CR80) & A4 sheets.
-            </p>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-800 space-y-1.5">
-            <div className="flex items-center gap-2 text-indigo-400 font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>Storage Optimization</span>
-            </div>
-            <p className="text-slate-400 leading-relaxed text-[11px]">
-              All photos automatically cropped and compressed to 300×300px JPEG under 40 KB to stay within the 5 GB Firebase Storage tier.
-            </p>
           </div>
         </div>
       </div>
