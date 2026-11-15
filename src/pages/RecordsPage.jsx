@@ -342,42 +342,42 @@ export default function RecordsPage() {
   const recordsToPrint = records.filter((r) => printTargetIds.includes(r.id));
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-3.5 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       {/* Toast Alert */}
       {toast && (
-        <div className="fixed top-20 right-8 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl text-xs text-slate-100 animate-in fade-in">
+        <div className="fixed top-20 right-4 sm:right-8 left-4 sm:left-auto z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl text-xs text-slate-100 animate-in fade-in">
           {toast.type === 'error' ? (
-            <AlertCircle className="w-4 h-4 text-red-400" />
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
           ) : (
-            <CheckCircle className="w-4 h-4 text-emerald-400" />
+            <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
           )}
-          <span>{toast.message}</span>
+          <span className="truncate">{toast.message}</span>
         </div>
       )}
 
       {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-100">Member Roster & ID Records</h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-100">Member Roster & ID Records</h2>
+          <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1">
             Manage students, employees, portrait photos, and trigger CR80 / A4 print batches
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs w-full sm:w-auto">
           {/* New Member Data Entry Button */}
           <button
             onClick={() => navigate('/entry')}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30 transition-all"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30 transition-all whitespace-nowrap"
           >
-            <UserPlus className="w-4 h-4" />
-            <span>+ Add Member (Data Entry)</span>
+            <UserPlus className="w-4 h-4 shrink-0" />
+            <span>+ Add Member</span>
           </button>
 
           {/* Multi-Photo ZIP / Batch file match */}
-          <label className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium cursor-pointer transition-colors">
-            <Images className="w-4 h-4 text-emerald-400" />
-            <span>Match Photos by ID</span>
+          <label className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium cursor-pointer transition-colors whitespace-nowrap">
+            <Images className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>Match Photos</span>
             <input
               type="file"
               multiple
@@ -390,19 +390,19 @@ export default function RecordsPage() {
           {/* Bulk Import Button */}
           <button
             onClick={() => setIsImportOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition-colors"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition-colors whitespace-nowrap"
           >
-            <Upload className="w-4 h-4 text-indigo-400" />
-            <span>Import CSV / Excel</span>
+            <Upload className="w-4 h-4 text-indigo-400 shrink-0" />
+            <span>Import CSV</span>
           </button>
 
           {/* Print All Button */}
           <button
             onClick={() => handleOpenPrint(records.map((r) => r.id))}
             disabled={records.length === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition-all disabled:opacity-50"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition-all disabled:opacity-50 whitespace-nowrap"
           >
-            <Printer className="w-4 h-4 text-emerald-400" />
+            <Printer className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>Print All ({records.length})</span>
           </button>
         </div>

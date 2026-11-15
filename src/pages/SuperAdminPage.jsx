@@ -226,40 +226,40 @@ export default function SuperAdminPage() {
   const countPending = records.filter((r) => !r.printStatus || r.printStatus === 'pending').length;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-3.5 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-6">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-indigo-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 border border-indigo-400 text-xs animate-in slide-in-from-top-2">
+        <div className="fixed top-20 right-4 sm:right-6 left-4 sm:left-auto z-50 bg-indigo-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 border border-indigo-400 text-xs animate-in slide-in-from-top-2">
           <CheckCircle className="w-4 h-4 text-emerald-300 shrink-0" />
-          <span className="font-medium">{toastMessage}</span>
+          <span className="font-medium truncate">{toastMessage}</span>
         </div>
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5" />
               Master Authority
             </span>
-            <span className="text-xs text-slate-400">• High-Volume Production Center</span>
+            <span className="text-[11px] sm:text-xs text-slate-400">• High-Volume Production Center</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-100 tracking-tight mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight mt-1">
             Super Administrator Command Hub
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
             Manage client organizations, control Card Designer permissions, process incoming print jobs, and export 300 DPI vector PDFs.
           </p>
         </div>
 
         {/* Global Action */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => handleOpenPrintModal(records)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-lg shadow-purple-600/30 transition-all"
+            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-lg shadow-purple-600/30 transition-all whitespace-nowrap"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4 shrink-0" />
             <span>Master PDF Imposition ({records.length})</span>
           </button>
         </div>
@@ -369,40 +369,40 @@ export default function SuperAdminPage() {
       </div>
 
       {/* Main Tab Navigation */}
-      <div className="flex items-center gap-3 border-b border-slate-800 pb-3">
+      <div className="flex items-center gap-2 sm:gap-3 border-b border-slate-800 pb-3 overflow-x-auto no-scrollbar whitespace-nowrap">
         <button
           onClick={() => setActiveTab('queue')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
             activeTab === 'queue'
               ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
               : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
           }`}
         >
-          <Printer className="w-4 h-4" />
-          <span>Print Production Queue ({records.length})</span>
+          <Printer className="w-4 h-4 shrink-0" />
+          <span>Production Queue ({records.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('organizations')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
             activeTab === 'organizations'
               ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
               : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
           }`}
         >
-          <Building2 className="w-4 h-4" />
+          <Building2 className="w-4 h-4 shrink-0" />
           <span>Organizations ({allOrganizations?.length || 0})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('users')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
             activeTab === 'users'
               ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
               : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
           }`}
         >
-          <Users className="w-4 h-4" />
+          <Users className="w-4 h-4 shrink-0" />
           <span>Users Directory ({allUsers?.length || 0})</span>
         </button>
       </div>

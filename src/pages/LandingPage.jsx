@@ -26,6 +26,8 @@ import {
   Check,
   Send,
   HelpCircle,
+  Menu,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { APP_VERSION } from '../config/version';
@@ -40,6 +42,7 @@ export default function LandingPage() {
   const [selectedValidityYears, setSelectedValidityYears] = useState(3);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [activeDeptTab, setActiveDeptTab] = useState('engineering');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Tier Calculation
   const count = Math.max(1, parseInt(employeeCount, 10) || 1);
@@ -149,26 +152,79 @@ export default function LandingPage() {
           </nav>
 
           {/* User Action CTAs */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             {currentUser ? (
               <Link
                 to="/dashboard"
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-2"
+                className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-1.5 sm:gap-2"
               >
-                <span>Go to Studio</span>
+                <span>Studio</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             ) : (
               <Link
                 to="/login"
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-xs font-bold transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2"
+                className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-xs font-bold transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 sm:gap-2"
               >
-                <span>Studio Login</span>
+                <span>Login</span>
                 <ChevronRight className="w-4 h-4" />
               </Link>
             )}
+
+            {/* Mobile Hamburger Toggle */}
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen((v) => !v)}
+              className="md:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition-colors"
+              aria-label="Toggle mobile menu"
+            >
+              {mobileNavOpen ? <X className="w-5 h-5 text-indigo-400" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Drawer */}
+        {mobileNavOpen && (
+          <div className="md:hidden border-t border-slate-800/80 bg-slate-950/95 backdrop-blur-2xl px-4 py-4 space-y-3 animate-in slide-in-from-top duration-200 shadow-2xl">
+            <nav className="flex flex-col gap-2 text-xs font-medium text-slate-300">
+              <a
+                href="#packages"
+                onClick={() => setMobileNavOpen(false)}
+                className="py-2 px-3 rounded-xl hover:bg-slate-900 hover:text-white transition-colors"
+              >
+                Packages & Pricing
+              </a>
+              <a
+                href="#calculator"
+                onClick={() => setMobileNavOpen(false)}
+                className="py-2 px-3 rounded-xl hover:bg-slate-900 hover:text-white transition-colors"
+              >
+                Price Calculator
+              </a>
+              <a
+                href="#departments"
+                onClick={() => setMobileNavOpen(false)}
+                className="py-2 px-3 rounded-xl hover:bg-slate-900 hover:text-white transition-colors"
+              >
+                Department Designs
+              </a>
+              <a
+                href="#verification"
+                onClick={() => setMobileNavOpen(false)}
+                className="py-2 px-3 rounded-xl hover:bg-slate-900 hover:text-white transition-colors"
+              >
+                Online Verification
+              </a>
+              <Link
+                to="/verify"
+                onClick={() => setMobileNavOpen(false)}
+                className="py-2 px-3 rounded-xl text-emerald-400 hover:bg-emerald-500/10 flex items-center gap-2 font-semibold"
+              >
+                <QrCode className="w-4 h-4" /> Verify a Card Online
+              </Link>
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* 2. HERO SECTION */}

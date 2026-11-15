@@ -342,38 +342,38 @@ export default function DataEntryPage() {
   const isLandscape = activeTemplate.orientation !== 'portrait';
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-3.5 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-6">
       {/* Toast Alert */}
       {toast && (
-        <div className="fixed top-20 right-8 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl text-xs text-slate-100 animate-in fade-in">
+        <div className="fixed top-20 right-4 sm:right-8 left-4 sm:left-auto z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl text-xs text-slate-100 animate-in fade-in">
           {toast.type === 'error' ? (
-            <AlertCircle className="w-4 h-4 text-red-400" />
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
           ) : (
-            <CheckCircle className="w-4 h-4 text-emerald-400" />
+            <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
           )}
-          <span>{toast.message}</span>
+          <span className="truncate">{toast.message}</span>
         </div>
       )}
 
       {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/records')}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors shrink-0"
             title="Back to Roster"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h2 className="text-2xl font-bold text-slate-100">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-100">
               {activeTab === 'company'
                 ? 'Company & Institution Profile'
                 : editId
                 ? 'Edit ID Card Record'
                 : 'Member Data Entry'}
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
               {activeTab === 'company'
                 ? 'Manage English & Bangla company name, logo, address, and authorized signature'
                 : 'Single-page view: All personal, Bangla bio, family, organizational, and emergency details'}
@@ -383,31 +383,31 @@ export default function DataEntryPage() {
 
         {/* Action Buttons Top (only for Card Entry) */}
         {activeTab === 'cards' && (
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 text-xs w-full sm:w-auto">
             <button
               onClick={handleSaveAndNew}
               disabled={loading}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition-colors"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition-colors"
             >
-              <PlusCircle className="w-4 h-4 text-indigo-400" />
-              <span>Save & Add Another</span>
+              <PlusCircle className="w-4 h-4 text-indigo-400 shrink-0" />
+              <span>Save & New</span>
             </button>
 
             <button
               onClick={handleSaveAndPrint}
               disabled={loading}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-lg shadow-emerald-600/30 transition-colors"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-lg shadow-emerald-600/30 transition-colors"
             >
-              <Printer className="w-4 h-4" />
-              <span>Save & Print Card</span>
+              <Printer className="w-4 h-4 shrink-0" />
+              <span>Save & Print</span>
             </button>
 
             <button
               onClick={handleSaveAndView}
               disabled={loading}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
+              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
             >
-              <Save className="w-4 h-4" />
+              <Save className="w-4 h-4 shrink-0" />
               <span>{loading ? 'Saving...' : 'Save & View Roster'}</span>
             </button>
           </div>
@@ -415,21 +415,21 @@ export default function DataEntryPage() {
       </div>
 
       {/* Mode Navigation Switcher */}
-      <div className="flex items-center gap-3 border-b border-slate-800 pb-3">
+      <div className="grid grid-cols-2 sm:flex items-center gap-2 sm:gap-3 border-b border-slate-800 pb-3">
         <button
           type="button"
           onClick={() => {
             setActiveTab('cards');
             setSearchParams({});
           }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+          className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
             activeTab === 'cards'
               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
               : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
           }`}
         >
-          <UserPlus className="w-4 h-4" />
-          <span>Cardholder Data Entry</span>
+          <UserPlus className="w-4 h-4 shrink-0" />
+          <span className="truncate">Cardholder Entry</span>
         </button>
 
         <button
@@ -438,15 +438,15 @@ export default function DataEntryPage() {
             setActiveTab('company');
             setSearchParams({ tab: 'company' });
           }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+          className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
             activeTab === 'company'
               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
               : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
           }`}
         >
-          <Building2 className="w-4 h-4 text-emerald-400" />
-          <span>Company Info & Assets</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          <Building2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="truncate">Company Info</span>
+          <span className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
             Logo & Address
           </span>
         </button>
@@ -1072,31 +1072,31 @@ export default function DataEntryPage() {
           </div>
 
           {/* Action Buttons Bottom */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 sm:gap-3 pt-2">
             <button
               onClick={handleSaveAndNew}
               disabled={loading}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs transition-colors"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs transition-colors"
             >
-              <PlusCircle className="w-4 h-4 text-indigo-400" />
-              <span>Save & Add Another</span>
+              <PlusCircle className="w-4 h-4 text-indigo-400 shrink-0" />
+              <span>Save & New</span>
             </button>
 
             <button
               onClick={handleSaveAndPrint}
               disabled={loading}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs shadow-lg shadow-emerald-600/30 transition-colors"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs shadow-lg shadow-emerald-600/30 transition-colors"
             >
-              <Printer className="w-4 h-4" />
-              <span>Save & Print Card</span>
+              <Printer className="w-4 h-4 shrink-0" />
+              <span>Save & Print</span>
             </button>
 
             <button
               onClick={handleSaveAndView}
               disabled={loading}
-              className="flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
+              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
             >
-              <Save className="w-4 h-4" />
+              <Save className="w-4 h-4 shrink-0" />
               <span>{loading ? 'Saving...' : 'Save & View Roster'}</span>
             </button>
           </div>
@@ -1104,7 +1104,7 @@ export default function DataEntryPage() {
 
         {/* Right Column: Sticky Live Card Preview (5 Cols) */}
         <div className="lg:col-span-5 sticky top-6 space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-slate-100 text-sm">Live CR80 Card Preview</h3>

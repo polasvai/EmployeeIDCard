@@ -94,9 +94,9 @@ export default function RecordTable({
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col">
       {/* Top Filter & Action Bar */}
-      <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="p-3 sm:p-4 border-b border-slate-800 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 text-xs">
         {/* Search Input */}
-        <div className="relative flex-1 min-w-[240px]">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -108,10 +108,10 @@ export default function RecordTable({
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700 overflow-x-auto">
+        <div className="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700 overflow-x-auto max-w-full no-scrollbar whitespace-nowrap">
           <button
             onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 ${
               statusFilter === 'all'
                 ? 'bg-indigo-600 text-white'
                 : 'text-slate-400 hover:text-white'
@@ -121,7 +121,7 @@ export default function RecordTable({
           </button>
           <button
             onClick={() => setStatusFilter('sent_to_print')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 ${
               statusFilter === 'sent_to_print'
                 ? 'bg-blue-600 text-white'
                 : 'text-slate-400 hover:text-white'
@@ -131,7 +131,7 @@ export default function RecordTable({
           </button>
           <button
             onClick={() => setStatusFilter('printing')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 ${
               statusFilter === 'printing'
                 ? 'bg-amber-600 text-white'
                 : 'text-slate-400 hover:text-white'
@@ -141,7 +141,7 @@ export default function RecordTable({
           </button>
           <button
             onClick={() => setStatusFilter('printed')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 ${
               statusFilter === 'printed'
                 ? 'bg-emerald-600 text-white'
                 : 'text-slate-400 hover:text-white'
@@ -151,7 +151,7 @@ export default function RecordTable({
           </button>
           <button
             onClick={() => setStatusFilter('delivered')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 ${
               statusFilter === 'delivered'
                 ? 'bg-purple-600 text-white'
                 : 'text-slate-400 hover:text-white'
@@ -161,7 +161,7 @@ export default function RecordTable({
           </button>
           <button
             onClick={() => setStatusFilter('pending')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 ${
               statusFilter === 'pending'
                 ? 'bg-slate-700 text-white'
                 : 'text-slate-400 hover:text-white'
@@ -172,7 +172,7 @@ export default function RecordTable({
         </div>
 
         {/* Batch Actions & Print Button */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center flex-wrap gap-2">
           {selectedIds.length > 0 && (
             <>
               <button
@@ -215,7 +215,7 @@ export default function RecordTable({
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left text-xs min-w-[700px]">
           <thead className="bg-slate-800/60 text-slate-400 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-800">
             <tr>
               <th className="p-3 w-10 text-center">

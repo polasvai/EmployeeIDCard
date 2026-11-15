@@ -14,6 +14,7 @@ import SuperAdminPage from './pages/SuperAdminPage';
 
 function ProtectedLayout() {
   const { currentUser, isSuperAdmin, loading } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   if (loading) {
     return (
@@ -30,10 +31,13 @@ function ProtectedLayout() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
-      <Navbar />
-      <div className="flex flex-1">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto">
+      <Navbar
+        onToggleMobileMenu={() => setMobileMenuOpen((v) => !v)}
+        isMobileMenuOpen={mobileMenuOpen}
+      />
+      <div className="flex flex-1 relative overflow-x-hidden">
+        <Sidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
           <Routes>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/entry" element={<DataEntryPage />} />

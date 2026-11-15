@@ -151,7 +151,7 @@ export default function ElementToolbar({ onAddElement, orientation }) {
   };
 
   return (
-    <div className="bg-slate-900 border-b border-slate-800 p-3 flex flex-wrap items-center gap-2 text-xs">
+    <div className="bg-slate-900 border-b border-slate-800 p-2 sm:p-3 flex items-center gap-1.5 sm:gap-2 text-xs overflow-x-auto no-scrollbar whitespace-nowrap shrink-0">
       <span className="text-slate-400 font-semibold uppercase tracking-wider text-[11px] mr-1">
         Add Element:
       </span>

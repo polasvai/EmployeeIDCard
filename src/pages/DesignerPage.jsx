@@ -29,6 +29,7 @@ import {
   Building,
   X,
   Lock,
+  Sliders,
 } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY_TEMPLATES = 'id_studio_templates';
@@ -44,6 +45,8 @@ export default function DesignerPage() {
   const [showBleedGuides, setShowBleedGuides] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState(null);
+
+  const [mobileDesignerTab, setMobileDesignerTab] = useState('canvas'); // 'canvas' | 'layers' | 'properties'
 
   // New Template Modal state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -407,7 +410,7 @@ export default function DesignerPage() {
       )}
 
       {/* Top Designer Sub-Header Bar */}
-      <div className="bg-slate-900 border-b border-slate-800 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="bg-slate-900 border-b border-slate-800 px-3 sm:px-6 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-2 sm:gap-3 text-xs">
         {/* Template Switcher Dropdown & Management */}
         <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-1.5 bg-slate-800 p-1 rounded-xl border border-slate-700">
@@ -566,35 +569,84 @@ export default function DesignerPage() {
         orientation={activeTemplate.orientation}
       />
 
+      {/* Mobile Panel Switcher (< xl) */}
+      <div className="xl:hidden bg-slate-900 border-b border-slate-800 px-3 py-1.5 flex items-center justify-around text-xs shrink-0">
+        <button
+          type="button"
+          onClick={() => setMobileDesignerTab('canvas')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            mobileDesignerTab === 'canvas'
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span>Canvas View</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileDesignerTab('layers')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            mobileDesignerTab === 'layers'
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>Layers ({activeElements.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileDesignerTab('properties')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            mobileDesignerTab === 'properties'
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Sliders className="w-3.5 h-3.5" />
+          <span>Inspector</span>
+          {selectedId && <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />}
+        </button>
+      </div>
+
       {/* Main Designer Canvas & Panels */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Layer Panel (Left) */}
-        <LayerPanel
-          elements={activeElements}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          onUpdateElements={handleUpdateElements}
-          onDeleteElement={handleDeleteElement}
-        />
+        <div className={`${mobileDesignerTab === 'layers' ? 'block w-full' : 'hidden'} xl:block shrink-0`}>
+          <LayerPanel
+            elements={activeElements}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onUpdateElements={handleUpdateElements}
+            onDeleteElement={handleDeleteElement}
+          />
+        </div>
 
         {/* Konva 300 DPI Canvas (Center) */}
-        <CardCanvas
-          template={activeTemplate}
-          currentSide={currentSide}
-          selectedId={selectedId}
-          onSelectId={setSelectedId}
-          onUpdateElement={handleUpdateElement}
-          showSafeGuides={showSafeGuides}
-          showBleedGuides={showBleedGuides}
-        />
+        <div className={`flex-1 ${mobileDesignerTab === 'canvas' ? 'flex' : 'hidden'} xl:flex overflow-hidden`}>
+          <CardCanvas
+            template={activeTemplate}
+            currentSide={currentSide}
+            selectedId={selectedId}
+            onSelectId={setSelectedId}
+            onUpdateElement={handleUpdateElement}
+            showSafeGuides={showSafeGuides}
+            showBleedGuides={showBleedGuides}
+          />
+        </div>
 
         {/* Property Inspector (Right) */}
-        <PropertyInspector
-          selectedElement={selectedElement}
-          onUpdateElement={handleUpdateElement}
-          background={currentBackground}
-          onUpdateBackground={handleUpdateBackground}
-        />
+        <div className={`${mobileDesignerTab === 'properties' ? 'block w-full' : 'hidden'} xl:block shrink-0`}>
+          <PropertyInspector
+            selectedElement={selectedElement}
+            onUpdateElement={handleUpdateElement}
+            background={currentBackground}
+            onUpdateBackground={handleUpdateBackground}
+          />
+        </div>
       </div>
 
       {/* New Template Modal */}

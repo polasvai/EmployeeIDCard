@@ -12,9 +12,11 @@ import {
   ShieldCheck,
   ExternalLink,
   Globe,
+  Menu,
+  X,
 } from 'lucide-react';
 
-export default function Navbar() {
+export default function Navbar({ onToggleMobileMenu, isMobileMenuOpen }) {
   const {
     currentUser,
     organization,
@@ -24,34 +26,46 @@ export default function Navbar() {
   } = useAuth();
 
   return (
-    <header className="h-16 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-6 flex items-center justify-between sticky top-0 z-40">
-      {/* Brand Logo & Name */}
-      <div className="flex items-center space-x-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-          <CreditCard className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h1 className="font-bold text-lg text-slate-100 flex items-center gap-2">
-            ID Card Studio
-            <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              CR80 / 300 DPI
-            </span>
-          </h1>
-          <p className="text-xs text-slate-400 flex items-center gap-1.5">
-            <Building2 className="w-3 h-3 text-slate-500" />
-            {isSuperAdmin
-              ? 'Super Admin Production HQ'
-              : organization?.name || 'My Organization'}
-          </p>
-        </div>
+    <header className="h-16 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-40">
+      {/* Left: Mobile Menu Toggle & Brand Logo */}
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        {/* Mobile Hamburger Toggle */}
+        <button
+          type="button"
+          onClick={onToggleMobileMenu}
+          className="lg:hidden p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition-colors"
+          aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+        >
+          {isMobileMenuOpen ? <X className="w-5 h-5 text-indigo-400" /> : <Menu className="w-5 h-5" />}
+        </button>
+
+        <Link to="/dashboard" className="flex items-center gap-2.5">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
+            <CreditCard className="w-5 h-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="font-bold text-base sm:text-lg text-slate-100 flex items-center gap-1.5 sm:gap-2 leading-tight">
+              <span>ID Card Studio</span>
+              <span className="hidden sm:inline-block text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                CR80 / 300 DPI
+              </span>
+            </h1>
+            <p className="text-[11px] sm:text-xs text-slate-400 flex items-center gap-1 truncate max-w-[130px] sm:max-w-[240px]">
+              <Building2 className="w-3 h-3 text-slate-500 shrink-0" />
+              <span className="truncate">
+                {isSuperAdmin ? 'Super Admin HQ' : organization?.name || 'My Organization'}
+              </span>
+            </p>
+          </div>
+        </Link>
       </div>
 
       {/* Right Actions & Status */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         {/* Role Badge (Super Admin vs Org User) */}
         {currentUser && (
           <div
-            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border ${
+            className={`hidden sm:flex items-center gap-1.5 text-xs px-2.5 sm:px-3 py-1.5 rounded-xl border ${
               isSuperAdmin
                 ? 'bg-purple-600/20 text-purple-300 border-purple-500/40 font-semibold'
                 : 'bg-indigo-600/20 text-indigo-300 border-indigo-500/30 font-medium'
@@ -62,7 +76,8 @@ export default function Navbar() {
             ) : (
               <Shield className="w-3.5 h-3.5 text-indigo-400" />
             )}
-            <span>{isSuperAdmin ? 'Super Administrator' : 'Organization User'}</span>
+            <span className="hidden md:inline">{isSuperAdmin ? 'Super Administrator' : 'Organization User'}</span>
+            <span className="md:hidden">{isSuperAdmin ? 'Admin' : 'User'}</span>
           </div>
         )}
 

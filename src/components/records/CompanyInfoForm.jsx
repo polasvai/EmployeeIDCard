@@ -142,38 +142,38 @@ export default function CompanyInfoForm({ onSaved }) {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
       {/* Toast Alert */}
       {toast && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-2xl border text-xs font-semibold animate-in fade-in slide-in-from-bottom-5 ${
+          className={`fixed bottom-20 lg:bottom-6 right-4 sm:right-6 left-4 sm:left-auto z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-2xl border text-xs font-semibold animate-in fade-in slide-in-from-bottom-5 ${
             toast.type === 'error'
               ? 'bg-rose-950 border-rose-500 text-rose-200'
               : 'bg-emerald-950 border-emerald-500 text-emerald-200'
           }`}
         >
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{toast.message}</span>
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="truncate">{toast.message}</span>
         </div>
       )}
 
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-indigo-950/70 via-slate-900 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 shadow-lg">
-            <Building2 className="w-7 h-7" />
+      <div className="bg-gradient-to-r from-indigo-950/70 via-slate-900 to-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 shadow-xl">
+        <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 shadow-lg">
+            <Building2 className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                 Corporate Profile
               </span>
-              <span className="text-xs text-slate-400 font-mono">
+              <span className="text-xs text-slate-400 font-mono truncate max-w-[120px] sm:max-w-none">
                 ID: {organization?.id || currentUser?.uid}
               </span>
             </div>
-            <h2 className="text-2xl font-bold text-white mt-1">Company & Institution Info</h2>
-            <p className="text-xs text-slate-300 mt-0.5">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mt-1">Company & Institution Info</h2>
+            <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5">
               Configure English & Bangla naming, official logo, address, and authorized signature used on all ID cards.
             </p>
           </div>
@@ -182,7 +182,7 @@ export default function CompanyInfoForm({ onSaved }) {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-all disabled:opacity-50"
+          className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50 shrink-0"
         >
           <Save className="w-4 h-4" />
           <span>{saving ? 'Saving...' : 'Save Company Info'}</span>
